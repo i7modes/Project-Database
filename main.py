@@ -10,7 +10,6 @@ db_config = {
     'password': 'admin123',
     'database': 'Supermarket'
 }
-#hello
 
 def get_db_connection():
     return mysql.connector.connect(**db_config)
