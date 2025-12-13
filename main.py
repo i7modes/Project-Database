@@ -7,7 +7,7 @@ app = Flask(__name__)
 db_config = {
     'host': 'localhost',
     'user': 'supermarket_admin',
-    'password': 'admin123',  # REPLACE with your actual password
+    'password': 'admin123',
     'database': 'Supermarket'
 }
 
@@ -21,13 +21,12 @@ def dashboard():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    # --- BASIC QUERIES ---
 
     # 1. Search for "Organic" Products
     cursor.execute("SELECT * FROM Products WHERE Name LIKE '%Organic%'")
     organic_products = cursor.fetchall()
 
-    # 2. Check Stock (e.g., at Warehouse 1)
+    # 2. Check Stock at Warehouse 1
     cursor.execute("""
                    SELECT P.Name, WS.Quantity
                    FROM WarehouseStock WS
@@ -35,8 +34,6 @@ def dashboard():
                    WHERE WS.WarehouseID = 1
                    """)
     stock_levels = cursor.fetchall()
-
-    # --- ADVANCED QUERIES ---
 
     # 3. Top 3 Best-Selling Products by Revenue
     cursor.execute("""
@@ -48,7 +45,7 @@ def dashboard():
                    """)
     top_sellers = cursor.fetchall()
 
-    # 4. Total Revenue (Single Value)
+    # 4. Total Revenue Single Value
     cursor.execute("SELECT SUM(TotalAmount) as Total FROM Transactions")
     total_revenue = cursor.fetchone()['Total']
 
