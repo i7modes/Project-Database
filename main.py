@@ -5,9 +5,9 @@ app = Flask(__name__)
 
 # Database Configuration
 db_config = {
-    'host': 'localhost',
+    'host': 'database.renthic.space',
     'user': 'supermarket_admin',
-    'password': 'admin123',
+    'password': 'Admin123!',
     'database': 'Supermarket'
 }
 
@@ -20,7 +20,7 @@ def dashboard():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    cursor.execute("SELECT CustomerID,FirstName,LastName,Phone,Address FROM customers")
+    cursor.execute("SELECT CustomerID,FirstName,LastName,Phone,Address FROM Customers")
     customer = cursor.fetchall()
 
     cursor.execute("SELECT * FROM Products")
