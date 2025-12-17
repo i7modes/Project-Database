@@ -22,6 +22,44 @@
 
     <h1>Supermarket Dashboard</h1>
 
+    <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+            <strong>Quick Actions</strong><br>
+            <small>Add a new customer to the database</small>
+        </div>
+        <a href="{{ url_for('add_customer') }}" style="text-decoration:none;">
+            <button style="padding:10px 14px; border:none; border-radius:6px; cursor:pointer; background:#2c3e50; color:white;">
+                + Add Customer
+            </button>
+        </a>
+    </div>
+
+    <h2>Customer information</h2>
+    <div class="card">
+        <table>
+            <thead>
+                <tr>
+                    <th>CustomerID</th>
+                    <th>FirstName</th>
+                    <th>LastName</th>
+                    <th>Phone</th>
+                    <th>Address</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in customer %}
+                <tr>
+                    <td>{{ c.CustomerID }}</td>
+                    <td>{{ c.FirstName }}</td>
+                    <td>{{ c.LastName }}</td>
+                    <td>{{ c.Phone }}</td>
+                    <td>{{ c.Address }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
     <div class="card" style="text-align: center;">
         <h3>Total Sales Revenue</h3>
         <div class="highlight">${{ total_revenue }}</div>
@@ -61,32 +99,6 @@
                 <tr>
                     <td>{{ item.Name }}</td>
                     <td>${{ item.TotalRevenue }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <h2>Stock Levels (Central Warehouse)</h2>
-    <div class="card">
-        <table>
-            <thead>
-                <tr>
-                    <th>Product</th>
-                    <th>Quantity Available</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in stock_levels %}
-                <tr>
-                    <td>{{ item.Name }}</td>
-                    <td>
-                        {% if item.Quantity == 0 %}
-                            <span style="color: red; font-weight: bold;">OUT OF STOCK</span>
-                        {% else %}
-                            {{ item.Quantity }}
-                        {% endif %}
-                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

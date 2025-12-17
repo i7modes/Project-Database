@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, redirect, url_for
 import mysql.connector
 
 app = Flask(__name__)
@@ -10,7 +10,7 @@ db_config = {
     'password': 'admin123',
     'database': 'Supermarket'
 }
-#hhhhhhhhhhhrrrrrrrrrr
+
 def get_db_connection():
     return mysql.connector.connect(**db_config)
 
@@ -20,21 +20,13 @@ def dashboard():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
+    cursor.execute("SELECT CustomerID,FirstName,LastName,Phone,Address FROM customers")
+    customer = cursor.fetchall()
 
-    # 1. Search for "Organic" Products
-    cursor.execute("SELECT * FROM Products WHERE Name LIKE '%Organic%'")
+    cursor.execute("SELECT * FROM Products")
     organic_products = cursor.fetchall()
 
-    # 2. Check Stock at Warehouse 1
-    cursor.execute("""
-                   SELECT P.Name, WS.Quantity
-                   FROM WarehouseStock WS
-                            JOIN Products P ON WS.ProductID = P.ProductID
-                   WHERE WS.WarehouseID = 1
-                   """)
-    stock_levels = cursor.fetchall()
-
-    # 3. Top 3 Best-Selling Products by Revenue
+    #Top 3 Best-Selling Products by Revenue
     cursor.execute("""
                    SELECT P.Name, SUM(TI.Quantity * TI.PriceAtTimeOfSale) as TotalRevenue
                    FROM TransactionItems TI
@@ -44,18 +36,46 @@ def dashboard():
                    """)
     top_sellers = cursor.fetchall()
 
-    # 4. Total Revenue Single Value
+    #Total Revenue Single Value
     cursor.execute("SELECT SUM(TotalAmount) as Total FROM Transactions")
     total_revenue = cursor.fetchone()['Total']
 
     cursor.close()
     conn.close()
-
     return render_template('dashboard.html',
                            organic_products=organic_products,
-                           stock_levels=stock_levels,
+                           customer=customer,
                            top_sellers=top_sellers,
                            total_revenue=total_revenue)
+
+@app.route('/add_customer', methods=['GET', 'POST'])
+def add_customer():
+    if request.method == 'POST':
+        first_name = request.form['first_name']
+        last_name = request.form['last_name']
+        email = request.form['email']
+        password = request.form['password']
+        phone = request.form['phone']
+        address = request.form['address']
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        query = """
+        INSERT INTO Customers (FirstName, LastName, Email, Password, Phone, Address)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        """
+        values = (first_name, last_name, email, password, phone, address)
+
+        cursor.execute(query, values)
+        conn.commit()
+
+        cursor.close()
+        conn.close()
+
+        return redirect(url_for('dashboard'))
+
+    return render_template('add_customer.html')
 
 
 if __name__ == '__main__':
