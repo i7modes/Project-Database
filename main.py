@@ -126,23 +126,31 @@ def checkout(customer_id):
     return "Purchase Successful! <a href='/shop'>Return to Shop</a>"
 
 @app.route('/admin')
-def dashboard():
+def admin():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-
-    cursor.execute("SELECT CustomerID,FirstName,LastName,Phone,Address FROM Customers")
-    customer = cursor.fetchall()
 
     cursor.execute("SELECT ProductID,Name,UnitPrice,Discount FROM products")
     products = cursor.fetchall()
 
     cursor.close()
     conn.close()
-    return render_template('dashboard.html',customer=customer,products=products)
+    return render_template('admin.html',products=products)
 
 ########################################################################################################################
 ########################################    Customer      ##############################################################
 ########################################################################################################################
+@app.route('/admin_customer', methods=['GET', 'POST'])
+def admin_customer():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("SELECT CustomerID,FirstName,LastName,Phone,Address FROM Customers")
+    customer = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template('admin_customer.html', customer=customer)
+
 @app.route('/add_customer', methods=['GET', 'POST'])
 def add_customer():
     if request.method == 'POST':
@@ -168,7 +176,7 @@ def add_customer():
         cursor.close()
         conn.close()
 
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('admin_customer'))
 
     return render_template('add_customer.html')
 
@@ -198,7 +206,7 @@ def edit_customer(customer_id):
 
         cursor.close()
         conn.close()
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('admin_customer'))
 
     cursor.execute("SELECT * FROM Customers WHERE CustomerID = %s", (customer_id,))
     customer = cursor.fetchone()
@@ -220,21 +228,124 @@ def delete_customer(customer_id):
     cursor.close()
     conn.close()
 
-    return redirect(url_for('dashboard'))
+    return redirect(url_for('admin_customer'))
+
+########################################################################################################################
+########################################    Employee      ###############################################################
+########################################################################################################################
+@app.route('/admin_employee', methods=['GET', 'POST'])
+def admin_employee():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("SELECT EmployeeID,FirstName,LastName,Email,Phone,Address,Role FROM employees")
+    employee = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+    return render_template('admin_employee.html', Emp=employee)
+
+@app.route('/add_employee', methods=['GET', 'POST'])
+def add_employee():
+    if request.method == 'POST':
+        first_name = request.form['first_name']
+        last_name = request.form['last_name']
+        email = request.form['email']
+        password = request.form['password']
+        phone = request.form['phone']
+        address = request.form['address']
+        role = request.form['role']
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        query = """
+        INSERT INTO employees (FirstName, LastName, Email, Password, Phone, Address, Role)
+        VALUES (%s, %s, %s, %s, %s, %s,%s)
+        """
+        values = (first_name, last_name, email, password, phone, address,role)
+
+        cursor.execute(query, values)
+        conn.commit()
+
+        cursor.close()
+        conn.close()
+
+        return redirect(url_for('admin_employee'))
+
+    return render_template('add_employee.html')
+
+@app.route('/edit_employee/<int:emp_id>', methods=['GET', 'POST'])
+def edit_employee(emp_id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    if request.method == 'POST':
+        first_name = request.form['first_name']
+        last_name  = request.form['last_name']
+        email      = request.form['email']
+        password   = request.form['password']
+        phone      = request.form['phone']
+        address    = request.form['address']
+        role       = request.form['role']
+
+        cursor2 = conn.cursor()
+        query = """
+            UPDATE employees
+            SET FirstName=%s, LastName=%s, Email=%s, Password=%s, Phone=%s, Address=%s, Role=%s
+            WHERE EmployeeID=%s
+        """
+        values = (first_name, last_name, email, password, phone, address,role, emp_id)
+        cursor2.execute(query, values)
+        conn.commit()
+        cursor2.close()
+
+        cursor.close()
+        conn.close()
+        return redirect(url_for('admin_employee'))
+
+    cursor.execute("SELECT * FROM employees WHERE EmployeeID = %s", (emp_id,))
+    employee = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    return render_template('edit_employee.html', Emp=employee)
+
+
+@app.route('/delete_employee/<int:emp_id>', methods=['POST'])
+def delete_employee(emp_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("DELETE FROM employees WHERE EmployeeID = %s", (emp_id,))
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect(url_for('admin_employee'))
+
+
+
+
+
 
 ########################################################################################################################
 ########################################    product      ###############################################################
 ########################################################################################################################
-@app.route('/products')
-def products_page():
+@app.route('/admin_product')
+def admin_product():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
     cursor.execute("""
-        SELECT P.ProductID, P.Name, P.UnitPrice, P.Discount, C.Name AS CategoryName, P.CategoryID
-        FROM Products P
-        LEFT JOIN Categories C ON P.CategoryID = C.CategoryID
-        ORDER BY P.ProductID DESC
+                SELECT P.ProductID, P.Name,P.UnitPrice,P.Discount,C.Name AS Category,P.CategoryID,SUM(W.Quantity) AS Quantity
+                FROM Products P
+                LEFT JOIN Categories C ON P.CategoryID = C.CategoryID
+                LEFT JOIN WarehouseStock W ON P.ProductID = W.ProductID
+                GROUP BY P.ProductID, P.Name, P.UnitPrice, P.Discount, C.Name, P.CategoryID
+                ORDER BY P.ProductID;
     """)
     products = cursor.fetchall()
 
@@ -244,29 +355,29 @@ def products_page():
     cursor.close()
     conn.close()
 
-    return render_template('products.html', products=products, categories=categories)
+    return render_template('admin_product.html', products=products, categories=categories)
 
-
-@app.route('/add_product', methods=['POST'])
-def add_product():
-    name = request.form['name']
-    unit_price = request.form['unit_price']
-    discount = request.form.get('discount', 0) or 0
-    category_id = request.form.get('category_id') or None
-
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        INSERT INTO Products (Name, UnitPrice, Discount, CategoryID)
-        VALUES (%s, %s, %s, %s)
-    """, (name, unit_price, discount, category_id))
-
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-    return redirect(url_for('products_page'))
+#<a class="btn btn-primary" href="{{ url_for('add_product') }}">➕ Add Product</a>
+# @app.route('/add_product', methods=['POST'])
+# def add_product():
+#     name = request.form['name']
+#     unit_price = request.form['unit_price']
+#     discount = request.form.get('discount', 0) or 0
+#     category_id = request.form.get('category_id') or None
+#
+#     conn = get_db_connection()
+#     cursor = conn.cursor()
+#
+#     cursor.execute("""
+#         INSERT INTO Products (Name, UnitPrice, Discount, CategoryID)
+#         VALUES (%s, %s, %s, %s)
+#     """, (name, unit_price, discount, category_id))
+#
+#     conn.commit()
+#     cursor.close()
+#     conn.close()
+#
+#     return redirect(url_for('admin_product'))
 
 
 @app.route('/edit_product/<int:product_id>', methods=['GET', 'POST'])
@@ -291,7 +402,7 @@ def edit_product(product_id):
 
         cursor.close()
         conn.close()
-        return redirect(url_for('products_page'))
+        return redirect(url_for('admin_product'))
 
     cursor.execute("SELECT * FROM Products WHERE ProductID=%s", (product_id,))
     product = cursor.fetchone()
@@ -312,7 +423,7 @@ def delete_product(product_id):
     conn.commit()
     cursor.close()
     conn.close()
-    return redirect(url_for('products_page'))
+    return redirect(url_for('admin_product'))
 
 if __name__ == '__main__':
     app.run(debug=True)

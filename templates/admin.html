@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Al-Salam | Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Header -->
+    <div class="topbar">
+        <div class="brand">
+            <div class="logo">🛒</div>
+            <div>
+                <h1>Al-Salam Supermarket</h1>
+            </div>
+        </div>
+
+        <div class="top-actions">
+            <a class="btn btn-dark" href="{{ url_for('admin_customer') }}">👤 Customers</a>
+            <a class="btn btn-dark" href="{{ url_for('admin_employee') }}">🪪 Employee</a>
+            <a class="btn btn-dark" href="{{ url_for('admin_product') }}">🧺 Products</a>
+            <a class="btn btn-dark" href="#top">🏆 Top Sellers</a>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid">
+        <div class="card">
+            <p class="stat-title">Total Revenue</p>
+            <div class="stat-value money">${{ total_revenue }}</div>
+            <p class="stat-note">Sum of TotalAmount from Transactions table</p>
+        </div>
+
+        <div class="card">
+            <p class="stat-title">Total Customers</p>
+            <div class="stat-value">{{ customer|length }}</div>
+            <p class="stat-note">Registered customers in the system</p>
+        </div>
+
+        <div class="card">
+            <p class="stat-title">Total Products</p>
+            <div class="stat-value">{{ organic_products|length }}</div>
+            <p class="stat-note">Products stored in the database</p>
+        </div>
+    </div>
+
+
+    <!-- Top Sellers -->
+    <div class="section" id="top">
+        <h2>🏆 Top Sellers <span class="pill">Top 3</span></h2>
+        <div class="card">
+            {% if top_sellers and top_sellers|length > 0 %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Total Revenue</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in top_sellers %}
+                    <tr>
+                        <td>{{ item.Name }}</td>
+                        <td class="money">${{ item.TotalRevenue }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty">Not enough sales data to display top sellers.</div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>
