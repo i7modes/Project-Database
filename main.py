@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for
 import mysql.connector
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -17,6 +18,114 @@ def get_db_connection():
 
 
 @app.route('/')
+def shop_page():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # Get all products and categories for the store front
+    cursor.execute(
+        "SELECT P.*, C.Name as CategoryName FROM Products P LEFT JOIN Categories C ON P.CategoryID = C.CategoryID")
+    products = cursor.fetchall()
+
+    # Get customers so we can "simulate" who is shopping
+    cursor.execute("SELECT CustomerID, FirstName, LastName FROM Customers")
+    customers = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+    return render_template('shop.html', products=products, customers=customers)
+
+
+@app.route('/add_to_cart', methods=['POST'])
+def add_to_cart():
+    customer_id = request.form.get('customer_id')
+    product_id = request.form.get('product_id')
+
+    if not customer_id:
+        return "Error: Please select a customer at the top of the page.", 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Check if item is already in cart to update quantity, otherwise insert new
+    query = """
+            INSERT INTO Carts (CustomerID, ProductID, Quantity)
+            VALUES (%s, %s, 1) ON DUPLICATE KEY \
+            UPDATE Quantity = Quantity + 1 \
+            """
+    cursor.execute(query, (customer_id, product_id))
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+    return redirect(url_for('view_cart', customer_id=customer_id))
+
+
+@app.route('/cart/<int:customer_id>')
+def view_cart(customer_id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # Fetch cart items with product details
+    query = """
+            SELECT P.Name, P.UnitPrice, P.Discount, C.Quantity, P.ProductID
+            FROM Carts C
+                     JOIN Products P ON C.ProductID = P.ProductID
+            WHERE C.CustomerID = %s \
+            """
+    cursor.execute(query, (customer_id,))
+    items = cursor.fetchall()
+
+    # Calculate total using price minus discount
+    total = sum(((item['UnitPrice'] - item['Discount']) * item['Quantity']) for item in items)
+
+    cursor.close()
+    conn.close()
+    return render_template('cart.html', items=items, total=total, customer_id=customer_id)
+
+
+@app.route('/checkout/<int:customer_id>', methods=['POST'])
+def checkout(customer_id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # 1. Get current cart items
+    cursor.execute(
+        "SELECT C.*, P.UnitPrice, P.Discount FROM Carts C JOIN Products P ON C.ProductID = P.ProductID WHERE CustomerID = %s",
+        (customer_id,))
+    cart_items = cursor.fetchall()
+
+    if not cart_items:
+        return redirect(url_for('shop_page'))
+
+    # 2. Calculate Total Amount
+    total_amount = sum(((item['UnitPrice'] - item['Discount']) * item['Quantity']) for item in cart_items)
+
+    # 3. Create a Transaction record (defaulting to EmployeeID 1 as the processor)
+    # The database requires EmployeeID [cite: 52]
+    cursor.execute("""
+                   INSERT INTO Transactions (TransactionTimestamp, TotalAmount, CustomerID, EmployeeID)
+                   VALUES (%s, %s, %s, %s)
+                   """, (datetime.now(), total_amount, customer_id, 1))
+    transaction_id = cursor.lastrowid
+
+    # 4. Move items to TransactionItems (Historical record)
+    for item in cart_items:
+        price_paid = item['UnitPrice'] - item['Discount']
+        cursor.execute("""
+                       INSERT INTO TransactionItems (TransactionID, ProductID, Quantity, PriceAtTimeOfSale)
+                       VALUES (%s, %s, %s, %s)
+                       """, (transaction_id, item['ProductID'], item['Quantity'], price_paid))
+
+    # 5. Clear the cart
+    cursor.execute("DELETE FROM Carts WHERE CustomerID = %s", (customer_id,))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return "Purchase Successful! <a href='/shop'>Return to Shop</a>"
+
+@app.route('/admin')
 def dashboard():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)

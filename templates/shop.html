@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Shop - Al-Salam Supermarket</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h1>Online Store</h1>
+
+    <div class="card">
+        <label><strong>Select Customer to Shop:</strong></label>
+        <select id="active_customer" onchange="syncCustomer(this.value)">
+            <option value="">-- Choose a Customer --</option>
+            {% for c in customers %}
+                <option value="{{ c.CustomerID }}">{{ c.FirstName }} {{ c.LastName }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="row" style="display: flex; flex-wrap: wrap; gap: 20px;">
+        {% for p in products %}
+        <div class="card" style="width: 250px;">
+            <h3>{{ p.Name }}</h3>
+            <p>Category: {{ p.CategoryName or 'General' }}</p>
+            <p>Price: <strong>${{ p.UnitPrice }}</strong></p>
+            {% if p.Discount > 0 %}
+                <p style="color: #e74c3c;">Discount: -${{ p.Discount }}</p>
+            {% endif %}
+
+            <form action="{{ url_for('add_to_cart') }}" method="POST">
+                <input type="hidden" name="product_id" value="{{ p.ProductID }}">
+                <input type="hidden" name="customer_id" class="hidden_cust_id">
+                <button type="submit" class="btn btn-add">Add to Cart</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        function syncCustomer(val) {
+            document.querySelectorAll('.hidden_cust_id').forEach(el => el.value = val);
+        }
+    </script>
+</body>
+</html>

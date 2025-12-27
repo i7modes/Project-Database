@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Your Cart</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h1>Your Shopping Cart</h1>
+
+    <div class="card">
+        {% if items %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Price</th>
+                    <th>Qty</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.Name }}</td>
+                    <td>${{ item.UnitPrice - item.Discount }}</td>
+                    <td>{{ item.Quantity }}</td>
+                    <td>${{ (item.UnitPrice - item.Discount) * item.Quantity }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div style="text-align: right; margin-top: 20px;">
+            <h2>Total Amount: ${{ total }}</h2>
+            <form action="{{ url_for('checkout', customer_id=customer_id) }}" method="POST">
+                <button type="submit" class="btn btn-primary" style="background:#2ecc71; padding: 15px 30px;">
+                    Confirm & Purchase
+                </button>
+            </form>
+            <br>
+            <a href="{{ url_for('shop_page') }}">Continue Shopping</a>
+        </div>
+        {% else %}
+            <p>Your cart is empty.</p>
+            <a href="{{ url_for('shop_page') }}" class="btn">Go to Shop</a>
+        {% endif %}
+    </div>
+</body>
+</html>
