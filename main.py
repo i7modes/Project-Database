@@ -1,9 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session
 import mysql.connector
 from datetime import datetime
 
 app = Flask(__name__)
-
+app.secret_key = 'alsalam_supermarket_secret_key_2025'
 
 # Database Configuration
 db_config = {
@@ -22,61 +22,157 @@ def shop_page():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    # Get all products and categories for the store front
-    cursor.execute(
-        "SELECT P.*, C.Name as CategoryName FROM Products P LEFT JOIN Categories C ON P.CategoryID = C.CategoryID")
+    # Check if a customer is logged in via session
+    customer_id = session.get('customer_id')
+    logged_in_user = None
+    if customer_id:
+        cursor.execute("SELECT FirstName FROM Customers WHERE CustomerID = %s", (customer_id,))
+        logged_in_user = cursor.fetchone()
+
+    # Fetch products with Category name alias [cite: 50]
+    cursor.execute("""
+                   SELECT P.ProductID, P.Name, P.UnitPrice, P.Discount, P.ImageURL, C.Name AS CategoryName
+                   FROM Products P
+                            LEFT JOIN Categories C ON P.CategoryID = C.CategoryID
+                   ORDER BY P.ProductID DESC
+                   """)
     products = cursor.fetchall()
 
-    # Get customers so we can "simulate" who is shopping
-    cursor.execute("SELECT CustomerID, FirstName, LastName FROM Customers")
-    customers = cursor.fetchall()
-
     cursor.close()
     conn.close()
-    return render_template('shop.html', products=products, customers=customers)
+    return render_template('shop.html', products=products, logged_in_user=logged_in_user)
 
 
-@app.route('/add_to_cart', methods=['POST'])
-def add_to_cart():
-    customer_id = request.form.get('customer_id')
-    product_id = request.form.get('product_id')
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
 
-    if not customer_id:
-        return "Error: Please select a customer at the top of the page.", 400
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
+        # 1. Check if the user is a Customer
+        cursor.execute("SELECT * FROM Customers WHERE Email = %s AND Password = %s", (email, password))
+        user = cursor.fetchone()
 
-    # Check if item is already in cart to update quantity, otherwise insert new
-    query = """
-            INSERT INTO Carts (CustomerID, ProductID, Quantity)
-            VALUES (%s, %s, 1) ON DUPLICATE KEY \
-            UPDATE Quantity = Quantity + 1 \
-            """
-    cursor.execute(query, (customer_id, product_id))
-    conn.commit()
+        if user:
+            session['user_id'] = user['CustomerID']
+            session['role'] = 'customer'
+            session['user_name'] = user['FirstName']
+            cursor.close()
+            conn.close()
+            # Redirect to shop, not a profile page
+            return redirect(url_for('shop_page'))
 
-    cursor.close()
-    conn.close()
-    return redirect(url_for('view_cart', customer_id=customer_id))
+        # 2. Check if the user is an Employee (Admin/Staff)
+        cursor.execute("SELECT * FROM Employees WHERE Email = %s AND Password = %s", (email, password))
+        employee = cursor.fetchone()
+
+        cursor.close()
+        conn.close()
+
+        if employee:
+            session['user_id'] = employee['EmployeeID']
+            # Store 'Admin' or 'Staff' role to control the settings icon later
+            session['role'] = employee['Role']
+            session['user_name'] = employee['FirstName']
+            # REDIRECT TO SHOP PAGE (Same as customer)
+            return redirect(url_for('shop_page'))
+
+        return "Invalid credentials. <a href='/login'>Try again</a>"
+
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('shop_page'))
 
 
-@app.route('/cart/<int:customer_id>')
-def view_cart(customer_id):
+@app.route('/edit_profile', methods=['GET', 'POST'])
+def edit_profile():
+    if 'user_id' not in session or session.get('role') != 'customer':
+        return redirect(url_for('login'))
+
+    customer_id = session['user_id']
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    # Fetch cart items with product details
+    if request.method == 'POST':
+        # Customer updates their own info
+        first_name = request.form['first_name']
+        last_name = request.form['last_name']
+        phone = request.form['phone']
+        address = request.form['address']
+
+        cursor.execute("""
+                       UPDATE Customers
+                       SET FirstName=%s,
+                           LastName=%s,
+                           Phone=%s,
+                           Address=%s
+                       WHERE CustomerID = %s
+                       """, (first_name, last_name, phone, address, customer_id))
+        conn.commit()
+        session['user_name'] = first_name  # Update session name
+        return redirect(url_for('shop_page'))
+
+    cursor.execute("SELECT * FROM Customers WHERE CustomerID = %s", (customer_id,))
+    customer = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return render_template('edit_profile.html', customer=customer)
+
+# Update Add to Cart to use Session instead of form input
+@app.route('/add_to_cart', methods=['POST'])
+def add_to_cart():
+    user_id = session.get('user_id')
+    user_role = session.get('role')
+
+    # Redirect guests to login
+    if not user_id:
+        return redirect(url_for('login'))
+
+    # If an Admin/Staff somehow triggers this, just send them back to the shop
+    if user_role in ['Admin', 'Staff']:
+        return redirect(url_for('shop_page'))
+
+    product_id = request.form.get('product_id')
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Proceed only for Customers
+    query = """
+            INSERT INTO Carts (CustomerID, ProductID, Quantity)
+            VALUES (%s, %s, 1) ON DUPLICATE KEY
+            UPDATE Quantity = Quantity + 1
+            """
+    cursor.execute(query, (user_id, product_id))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return redirect(url_for('view_cart', customer_id=user_id))
+
+@app.route('/cart/<int:customer_id>')
+def view_cart(customer_id):
+    # Verify the logged-in user is viewing their own cart
+    if session.get('user_id') != customer_id:
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
     query = """
             SELECT P.Name, P.UnitPrice, P.Discount, C.Quantity, P.ProductID
             FROM Carts C
                      JOIN Products P ON C.ProductID = P.ProductID
-            WHERE C.CustomerID = %s \
+            WHERE C.CustomerID = %s
             """
     cursor.execute(query, (customer_id,))
     items = cursor.fetchall()
 
-    # Calculate total using price minus discount
     total = sum(((item['UnitPrice'] - item['Discount']) * item['Quantity']) for item in items)
 
     cursor.close()
@@ -339,13 +435,13 @@ def admin_product():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
+    # Note the use of "AS CategoryName" to match the template variable
     cursor.execute("""
-                SELECT P.ProductID, P.Name,P.UnitPrice,P.Discount,C.Name AS Category,P.CategoryID,SUM(W.Quantity) AS Quantity
-                FROM Products P
-                LEFT JOIN Categories C ON P.CategoryID = C.CategoryID
-                LEFT JOIN WarehouseStock W ON P.ProductID = W.ProductID
-                GROUP BY P.ProductID, P.Name, P.UnitPrice, P.Discount, C.Name, P.CategoryID
-                ORDER BY P.ProductID;
+        SELECT P.ProductID, P.Name, P.UnitPrice, P.Discount, P.ImageURL, 
+               C.Name AS CategoryName, P.CategoryID
+        FROM Products P
+        LEFT JOIN Categories C ON P.CategoryID = C.CategoryID
+        ORDER BY P.ProductID DESC
     """)
     products = cursor.fetchall()
 
@@ -357,27 +453,44 @@ def admin_product():
 
     return render_template('admin_product.html', products=products, categories=categories)
 
-#<a class="btn btn-primary" href="{{ url_for('add_product') }}">➕ Add Product</a>
-# @app.route('/add_product', methods=['POST'])
-# def add_product():
-#     name = request.form['name']
-#     unit_price = request.form['unit_price']
-#     discount = request.form.get('discount', 0) or 0
-#     category_id = request.form.get('category_id') or None
-#
-#     conn = get_db_connection()
-#     cursor = conn.cursor()
-#
-#     cursor.execute("""
-#         INSERT INTO Products (Name, UnitPrice, Discount, CategoryID)
-#         VALUES (%s, %s, %s, %s)
-#     """, (name, unit_price, discount, category_id))
-#
-#     conn.commit()
-#     cursor.close()
-#     conn.close()
-#
-#     return redirect(url_for('admin_product'))
+
+# Updated route to handle the separate fields page
+@app.route('/add_product', methods=['GET', 'POST'])
+def add_product():
+    conn = get_db_connection()
+    if request.method == 'POST':
+        name = request.form['name']
+        unit_price = request.form['unit_price']
+        discount = request.form.get('discount', 0) or 0
+        category_id = request.form.get('category_id') or None
+        image_url = request.form.get('image_url') or 'default_product.png'
+
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO Products (Name, UnitPrice, Discount, CategoryID, ImageURL)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (name, unit_price, discount, category_id, image_url))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        # Redirect back to the management list after saving
+        return redirect(url_for('admin_product'))
+
+    # If GET, fetch categories to populate the dropdown on the fields page
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT CategoryID, Name FROM Categories ORDER BY Name")
+    categories = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template('add_product.html', categories=categories)
+
+    # GET request: Load categories for the dropdown menu
+    cursor.execute("SELECT CategoryID, Name FROM Categories ORDER BY Name")
+    categories = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    return render_template('add_product.html', categories=categories)
 
 
 @app.route('/edit_product/<int:product_id>', methods=['GET', 'POST'])
@@ -388,15 +501,16 @@ def edit_product(product_id):
     if request.method == 'POST':
         name = request.form['name']
         unit_price = request.form['unit_price']
-        discount = request.form.get('discount', 0) or 0
-        category_id = request.form.get('category_id') or None
+        discount = request.form.get('discount', 0)
+        category_id = request.form.get('category_id')
+        image_url = request.form.get('image_url') # Capture the URL field
 
         cursor2 = conn.cursor()
         cursor2.execute("""
             UPDATE Products
-            SET Name=%s, UnitPrice=%s, Discount=%s, CategoryID=%s
+            SET Name=%s, UnitPrice=%s, Discount=%s, CategoryID=%s, ImageURL=%s
             WHERE ProductID=%s
-        """, (name, unit_price, discount, category_id, product_id))
+        """, (name, unit_price, discount, category_id, image_url, product_id))
         conn.commit()
         cursor2.close()
 

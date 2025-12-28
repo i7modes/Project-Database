@@ -1,0 +1,121 @@
+/* Navigation Bar Styling */
+.topbar {
+    background: #064e3b; /* Teal Green from Customer design */
+    padding: 15px;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 0 0 10px 10px;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+}
+
+.brand h1 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.user-nav {
+    display: flex;
+    align-items: center;
+}
+
+.welcome-text {
+    margin-right: 15px;
+    font-size: 0.95em;
+}
+
+.settings-icon {
+    text-decoration: none;
+    font-size: 22px;
+    margin-right: 15px;
+    transition: transform 0.2s;
+    display: inline-block;
+}
+
+.settings-icon:hover {
+    transform: rotate(45deg);
+}
+
+/* Product Grid Layout */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 25px;
+    margin-top: 20px;
+}
+
+.product-card {
+    text-align: center;
+    padding: 20px;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    background: white;
+    transition: box-shadow 0.3s ease;
+}
+
+.product-card:hover {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.product-card img {
+    width: 180px;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #f8f8f8;
+}
+
+.product-card h3 {
+    margin: 10px 0;
+    color: #333;
+}
+
+.product-category {
+    color: #7f8c8d;
+    font-size: 0.9em;
+}
+
+.product-price-box {
+    margin: 15px 0;
+}
+
+.price-value {
+    font-size: 20px;
+    font-weight: bold;
+    color: #064e3b;
+}
+
+.discount-text {
+    color: #e74c3c;
+    font-size: 0.85em;
+    margin-left: 10px;
+}
+
+/* Button States */
+.btn-shop-add {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    background: #064e3b;
+    border: none;
+    color: white;
+    font-weight: bold;
+}
+
+.btn-disabled {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    background: #9ca3af;
+    color: #f3f4f6;
+    cursor: not-allowed;
+    border: none;
+    font-weight: bold;
+}

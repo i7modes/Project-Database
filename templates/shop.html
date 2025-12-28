@@ -2,49 +2,72 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Shop - Al-Salam Supermarket</title>
+    <title>Al-Salam Supermarket | Shop</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shop.css') }}">
 </head>
 <body>
-    <h1>Online Store</h1>
 
-    <div class="card">
-        <label><strong>Select Customer to Shop:</strong></label>
-        <select id="active_customer" onchange="syncCustomer(this.value)">
-            <option value="">-- Choose a Customer --</option>
-            {% for c in customers %}
-                <option value="{{ c.CustomerID }}">{{ c.FirstName }} {{ c.LastName }}</option>
-            {% endfor %}
-        </select>
-    </div>
-
-    <div class="row" style="display: flex; flex-wrap: wrap; gap: 20px;">
-        {% for p in products %}
-        <div class="card" style="width: 250px;">
-            <h3>{{ p.Name }}</h3>
-            <p>Category: {{ p.CategoryName or 'General' }}</p>
-            <p>Price: <strong>${{ p.UnitPrice }}</strong></p>
-            {% if p.Discount > 0 %}
-                <p style="color: #e74c3c;">Discount: -${{ p.Discount }}</p>
-            {% endif %}
-
-            <form action="{{ url_for('add_to_cart') }}" method="POST">
-                <input type="hidden" name="product_id" value="{{ p.ProductID }}">
-                <input type="hidden" name="customer_id" class="hidden_cust_id">
-                <button type="submit" class="btn btn-add">Add to Cart</button>
-            </form>
+    <div class="topbar">
+        <div class="brand">
+            <span style="font-size: 24px; margin-right: 10px;">🛒</span>
+            <h1>Al-Salam Supermarket</h1>
         </div>
-        {% endfor %}
+
+        <div class="user-nav">
+            {% if session.get('user_id') %}
+                <span class="welcome-text">Hello, <strong>{{ session.get('user_name') }}</strong></span>
+
+                {% if session.get('role') == 'customer' %}
+                    <a href="{{ url_for('edit_profile') }}" class="settings-icon" title="My Profile">⚙️</a>
+                    <a href="{{ url_for('view_cart', customer_id=session['user_id']) }}" class="btn" style="background: #f39c12; color: white; text-decoration: none; padding: 6px 12px; border-radius: 4px; margin-right: 10px;">
+                        My Cart
+                    </a>
+                {% elif session.get('role') in ['Admin', 'Staff'] %}
+                    <a href="{{ url_for('admin') }}" class="settings-icon" title="Admin Panel">⚙️</a>
+                {% endif %}
+
+                <a href="{{ url_for('logout') }}" class="btn btn-small btn-delete" style="text-decoration: none;">Logout</a>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="btn btn-primary" style="text-decoration: none; background: #3498db; padding: 10px 20px; border-radius: 8px;">
+                    👤 Login
+                </a>
+            {% endif %}
+        </div>
     </div>
 
-    <script>
-        function syncCustomer(val) {
-            document.querySelectorAll('.hidden_cust_id').forEach(el => el.value = val);
-        }
-    </script>
-    <a href="{{ url_for('admin') }}" class="floating-btn">
-    Setting
-    </a>
+    <div class="section" style="margin-top: 20px; padding: 0 20px;">
+        <h2>🧺 Fresh Products</h2>
+        <hr>
+
+        <div class="product-grid">
+            {% for p in products %}
+            <div class="product-card">
+                <img src="{{ url_for('static', filename='uploads/' + (p.ImageURL or 'default_product.png')) }}" alt="{{ p.Name }}">
+
+                <h3>{{ p.Name }}</h3>
+                <p class="product-category">{{ p.CategoryName or 'General' }}</p>
+
+                <div class="product-price-box">
+                    <span class="price-value">${{ p.UnitPrice }}</span>
+                    {% if p.Discount > 0 %}
+                        <span class="discount-text">(Save ${{ p.Discount }})</span>
+                    {% endif %}
+                </div>
+
+                <form action="{{ url_for('add_to_cart') }}" method="POST">
+                    <input type="hidden" name="product_id" value="{{ p.ProductID }}">
+
+                    {% if session.get('role') in ['Admin', 'Staff'] %}
+                        <button type="button" class="btn-disabled" disabled>🚫 Admin View Only</button>
+                    {% else %}
+                        <button type="submit" class="btn-shop-add">🛒 Add to Cart</button>
+                    {% endif %}
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
 
 </body>
 </html>

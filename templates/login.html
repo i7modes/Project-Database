@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Al-Salam</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body style="background: #f3f4f6; display: flex; justify-content: center; align-items: center; height: 100vh;">
+
+    <div class="card" style="width: 100%; max-width: 400px; padding: 40px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+        <h2 style="text-align: center; color: #064e3b; margin-bottom: 30px;">Customer Login</h2>
+        <hr>
+
+        <form method="POST">
+            <label style="display: block; font-weight: bold; margin-bottom: 8px;">Email Address</label>
+            <input type="email" name="email" required placeholder="name@email.com"
+                   style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px;">
+
+            <label style="display: block; font-weight: bold; margin-bottom: 8px;">Password</label>
+            <input type="password" name="password" required placeholder="••••••••"
+                   style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 30px;">
+
+            <div class="actions" style="display: flex; flex-direction: column; gap: 10px;">
+                <button class="primary" type="submit" style="width: 100%; padding: 12px;">Login</button>
+                <a href="{{ url_for('shop_page') }}" style="text-align: center; color: #7f8c8d; text-decoration: none; font-size: 14px;">Back to Shop</a>
+            </div>
+        </form>
+    </div>
+
+</body>
+</html>

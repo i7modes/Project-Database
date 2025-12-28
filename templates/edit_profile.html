@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Profile</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<div class="container">
+    <h1>👤 My Profile</h1>
+    <p>Update your personal information below.</p>
+    <hr>
+
+    <div class="card">
+        <form method="POST">
+            <label>First Name</label>
+            <input type="text" name="first_name" value="{{ customer.FirstName }}" required style="width: 100%; padding: 10px; margin-bottom: 15px;">
+
+            <label>Last Name</label>
+            <input type="text" name="last_name" value="{{ customer.LastName }}" required style="width: 100%; padding: 10px; margin-bottom: 15px;">
+
+            <label>Phone Number</label>
+            <input type="text" name="phone" value="{{ customer.Phone or '' }}" style="width: 100%; padding: 10px; margin-bottom: 15px;">
+
+            <label>Delivery Address</label>
+            <input type="text" name="address" value="{{ customer.Address or '' }}" style="width: 100%; padding: 10px; margin-bottom: 20px;">
+
+            <div class="actions">
+                <button class="btn btn-primary" type="submit">Update Profile</button>
+                <a href="{{ url_for('shop_page') }}" class="btn btn-dark" style="text-decoration: none;">Back to Shop</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>
