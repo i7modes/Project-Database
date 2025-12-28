@@ -219,7 +219,7 @@ def checkout(customer_id):
     conn.commit()
     cursor.close()
     conn.close()
-    return "Purchase Successful! <a href='/shop'>Return to Shop</a>"
+    return "Purchase Successful! <a href='/'>Return to Shop</a>"
 
 @app.route('/admin')
 def admin():
