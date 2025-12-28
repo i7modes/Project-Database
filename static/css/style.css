@@ -185,6 +185,10 @@ tr:hover td{ background:#fafafa; }
     background:#1f2937;
     color:#fff;
 }
+.btn-updateQauntity{
+    background:#48D1CC;
+    color:#fff;
+}
 .btn-delete{
     background: var(--danger);
     color:#fff;

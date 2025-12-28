@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Warehouse product</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+<body>
+
+<h1>Edit Warehouse product</h1>
+
+<div class="card">
+    <form method="POST">
+        <label>Quantity</label>
+        <input type="text" name="quantity" value="{{ warehouse.Quantity }}" required>
+
+
+        <div class="actions">
+            <button class="primary" type="submit">Save Changes</button>
+            <a href="{{ url_for('admin_warehouse_product' ,Ware_id=warehouse.WarehouseID)  }}">
+                <button class="secondary" type="button">Back</button>
+            </a>
+        </div>
+    </form>
+</div>
+
+</body>
+</html>

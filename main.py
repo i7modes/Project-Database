@@ -425,5 +425,147 @@ def delete_product(product_id):
     conn.close()
     return redirect(url_for('admin_product'))
 
+########################################################################################################################
+########################################    Warehouse      #############################################################
+########################################################################################################################
+@app.route('/admin_warehouse')
+def admin_warehouse():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("""
+                SELECT W.WarehouseID,W.Name,W.Address
+                FROM warehouses W
+    """)
+    warehouse = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template('admin_warehouse.html', warehouse=warehouse)
+
+@app.route('/add_warehouse', methods=['GET', 'POST'])
+def add_warehouse():
+    if request.method == 'POST':
+        name = request.form['name']
+        address = request.form['address']
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        query = """
+        INSERT INTO warehouses (Name , Address)
+        VALUES (%s, %s)
+        """
+        values = (name,address)
+
+        cursor.execute(query, values)
+        conn.commit()
+
+        cursor.close()
+        conn.close()
+
+        return redirect(url_for('admin_warehouse'))
+
+    return render_template('add_warehouse.html')
+
+
+@app.route('/edit_warehouse/<int:Ware_id>', methods=['GET', 'POST'])
+def edit_warehouse(Ware_id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    if request.method == 'POST':
+        name = request.form['name']
+        address = request.form['address']
+
+        cursor2 = conn.cursor()
+        cursor2.execute("""
+            UPDATE warehouses
+            SET Name=%s, Address=%s
+            WHERE WarehouseID=%s
+        """, (name, address ,Ware_id))
+        conn.commit()
+        cursor2.close()
+
+        cursor.close()
+        conn.close()
+        return redirect(url_for('admin_warehouse'))
+
+    cursor.execute("SELECT * FROM warehouses WHERE WarehouseID=%s", (Ware_id,))
+    warehouse = cursor.fetchone()
+
+
+    cursor.close()
+    conn.close()
+    return render_template('edit_warehouse.html', warehouse=warehouse)
+
+@app.route('/admin_warehouse_product/<int:Ware_id>', methods=['GET'])
+def admin_warehouse_product(Ware_id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+            SELECT P.ProductID,P.Name,S.Quantity,S.WarehouseID
+            FROM products P , warehousestock S
+            Where S.ProductID = P.ProductID AND S.WarehouseID = %s
+    """
+    cursor.execute(query, (Ware_id,))
+    product = cursor.fetchall()
+
+
+    cursor.close()
+    conn.close()
+    return render_template('admin_warehouse_product.html', product=product)
+
+@app.route('/edit_warehouse_product/<int:Ware_id>/<int:P_id>', methods=['GET','POST'])
+def edit_warehouse_product(Ware_id,P_id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    if request.method == 'POST':
+        qunatity = request.form['quantity']
+
+        cursor2 = conn.cursor()
+        cursor2.execute("""
+            UPDATE warehousestock
+            SET Quantity=%s
+            WHERE WarehouseID=%s AND ProductID=%s
+        """, (qunatity, Ware_id ,P_id))
+        conn.commit()
+        cursor2.close()
+
+        cursor.close()
+        conn.close()
+        return redirect(url_for('admin_warehouse_product',Ware_id=Ware_id))
+
+    cursor.execute("SELECT * FROM warehousestock WHERE WarehouseID=%s AND ProductID=%s", (Ware_id,P_id,))
+    warehouse = cursor.fetchone()
+
+
+    cursor.close()
+    conn.close()
+    return render_template('edit_warehouse_product.html', warehouse=warehouse)
+
+
+@app.route('/delete_warehouse_product/<int:Ware_id>/<int:P_id>', methods=['POST'])
+def delete_warehouse_product(Ware_id,P_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM warehousestock WHERE WarehouseID=%s AND ProductID=%s", (Ware_id,P_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return redirect(url_for('admin_warehouse_product'))
+
+@app.route('/delete_warehouse/<int:Ware_id>', methods=['POST'])
+def delete_warehouse(Ware_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM warehouses WHERE WarehouseID=%s", (Ware_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return redirect(url_for('admin_warehouse'))
 if __name__ == '__main__':
     app.run(debug=True)
