@@ -8,8 +8,8 @@ app.secret_key = 'alsalam_supermarket_secret_key_2025'
 # Database Configuration
 db_config = {
     'host': 'localhost',
-    'user': 'supermarket_admin',
-    'password': 'admin123',
+    'user': 'root',
+    'password': '1234',
     'database': 'Supermarket'
 }
 
@@ -630,7 +630,7 @@ def admin_warehouse_product(Ware_id):
 
     cursor.close()
     conn.close()
-    return render_template('admin_warehouse_product.html', product=product)
+    return render_template('admin_warehouse_product.html', product=product,Ware_id=Ware_id)
 
 @app.route('/edit_warehouse_product/<int:Ware_id>/<int:P_id>', methods=['GET','POST'])
 def edit_warehouse_product(Ware_id,P_id):
@@ -661,6 +661,39 @@ def edit_warehouse_product(Ware_id,P_id):
     conn.close()
     return render_template('edit_warehouse_product.html', warehouse=warehouse)
 
+@app.route('/add_warehouse_product/<int:Ware_id>', methods=['GET','POST'])
+def add_warehouse_product(Ware_id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    if request.method == 'POST':
+        product_id = request.form['product_id']
+        quantity = request.form['quantity']
+
+        cursor2 = conn.cursor()
+        cursor2.execute("""
+                    INSERT INTO warehousestock (WarehouseID,ProductID,Quantity) 
+                    values(%s,%s,%s)
+        """, (Ware_id, product_id,quantity))
+        conn.commit()
+        cursor2.close()
+
+        cursor.close()
+        conn.close()
+        return redirect(url_for('admin_warehouse_product',Ware_id=Ware_id))
+
+
+    cursor.execute("""select P.ProductID,P.Name
+                                from products P
+                                where (P.ProductID,P.Name) NOT IN (SELECT P.ProductID,P.Name
+                                from products P LEFT join warehousestock w on P.ProductID = W.ProductID
+                                WHERE W.WarehouseID = %s)""",
+                   (Ware_id,))
+    product = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+    return render_template('add_warehouse_product.html', product=product,Ware_id=Ware_id)
 
 @app.route('/delete_warehouse_product/<int:Ware_id>/<int:P_id>', methods=['POST'])
 def delete_warehouse_product(Ware_id,P_id):

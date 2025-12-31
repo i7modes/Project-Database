@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Warehouse product</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+<body>
+
+<h1>Add Warehouse product</h1>
+
+<div class="card">
+    <form method="POST">
+
+        <label>Product</label>
+        <select name="product_id" required>
+            <option value="">(No product)</option>
+            {% for p in product %}
+                <option value="{{ p.ProductID }}">{{ p.Name }}</option>
+            {% endfor %}
+        </select>
+
+        <label>Quantity</label>
+        <input type="text" name="quantity"  required>
+
+
+        <div class="actions">
+            <button class="primary" type="submit">Save Changes</button>
+            <a href="{{ url_for('admin_warehouse_product' ,Ware_id=Ware_id)  }}">
+                <button class="secondary" type="button">Back</button>
+            </a>
+        </div>
+    </form>
+</div>
+
+</body>
+</html>
