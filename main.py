@@ -29,7 +29,7 @@ def shop_page():
         cursor.execute("SELECT FirstName FROM Customers WHERE CustomerID = %s", (customer_id,))
         logged_in_user = cursor.fetchone()
 
-    # Fetch products with Category name alias [cite: 50]
+    # Fetch products with Category name alias
     cursor.execute("""
                    SELECT P.ProductID, P.Name, P.UnitPrice, P.Discount, P.ImageURL, C.Name AS CategoryName
                    FROM Products P
@@ -89,40 +89,155 @@ def logout():
     session.clear()
     return redirect(url_for('shop_page'))
 
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        # Capturing required attributes: FirstName, LastName, Email, Password
+        first_name = request.form['first_name']
+        last_name = request.form['last_name']
+        email = request.form['email']
+        password = request.form['password']
+        phone = request.form.get('phone', '') # Optional
+        address = request.form.get('address', '') # Optional
+
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Ensure account uniqueness by checking the email
+        cursor.execute("SELECT * FROM Customers WHERE Email = %s", (email,))
+        if cursor.fetchone():
+            cursor.close()
+            conn.close()
+            return "Error: This email is already registered. <a href='/register'>Try a different one.</a>"
+
+        # Insert the new customer into the database
+        query = """
+            INSERT INTO Customers (FirstName, LastName, Email, Password, Phone, Address)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """
+        cursor.execute(query, (first_name, last_name, email, password, phone, address))
+        conn.commit()
+
+        # Automatically log the user in after registration
+        new_user_id = cursor.lastrowid
+        session['user_id'] = new_user_id
+        session['user_name'] = first_name
+        session['role'] = 'customer'
+
+        cursor.close()
+        conn.close()
+        return redirect(url_for('shop_page'))
+
+    return render_template('register.html')
+
+
+@app.route('/customer_panel')
+def customer_panel():
+    user_id = session.get('user_id')
+    if not user_id or session.get('role') != 'customer':
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # 1. Get Stats (Spent & Orders)
+    cursor.execute("SELECT SUM(TotalAmount) as total, COUNT(*) as count FROM Transactions WHERE CustomerID = %s", (user_id,))
+    stats = cursor.fetchone()
+    total_spent = stats['total'] if stats['total'] else 0
+    order_count = stats['count']
+
+    # 2. Get Cart Item Count
+    cursor.execute("SELECT SUM(Quantity) as cart_total FROM Carts WHERE CustomerID = %s", (user_id,))
+    cart_res = cursor.fetchone()
+    cart_count = cart_res['cart_total'] if cart_res['cart_total'] else 0
+
+    # 3. Get Transaction History
+    cursor.execute("SELECT * FROM Transactions WHERE CustomerID = %s ORDER BY TransactionTimestamp DESC LIMIT 5", (user_id,))
+    transactions = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template('customer_panel.html',
+                           total_spent=total_spent,
+                           order_count=order_count,
+                           cart_count=cart_count,
+                           transactions=transactions)
+
+@app.route('/order_details/<int:transaction_id>')
+def order_details(transaction_id):
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # 1. Fetch Order Metadata and verify ownership
+    cursor.execute("""
+        SELECT * FROM Transactions 
+        WHERE TransactionID = %s AND CustomerID = %s
+    """, (transaction_id, user_id))
+    order = cursor.fetchone()
+
+    if not order:
+        cursor.close()
+        conn.close()
+        return "Order not found or access denied.", 403
+
+    # 2. Fetch all products in this specific transaction
+    query = """
+        SELECT P.Name, TI.Quantity, TI.PriceAtTimeOfSale, 
+               (TI.Quantity * TI.PriceAtTimeOfSale) as Subtotal
+        FROM TransactionItems TI
+        JOIN Products P ON TI.ProductID = P.ProductID
+        WHERE TI.TransactionID = %s
+    """
+    cursor.execute(query, (transaction_id,))
+    items = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+    return render_template('order_details.html', order=order, items=items)
+
 
 @app.route('/edit_profile', methods=['GET', 'POST'])
 def edit_profile():
-    if 'user_id' not in session or session.get('role') != 'customer':
+    user_id = session.get('user_id')
+    if not user_id:
         return redirect(url_for('login'))
 
-    customer_id = session['user_id']
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
     if request.method == 'POST':
-        # Customer updates their own info
-        first_name = request.form['first_name']
-        last_name = request.form['last_name']
-        phone = request.form['phone']
-        address = request.form['address']
+        # Update user information
+        first_name = request.form.get('first_name')
+        last_name = request.form.get('last_name')
+        email = request.form.get('email')
+        phone = request.form.get('phone')
+        address = request.form.get('address')
 
         cursor.execute("""
                        UPDATE Customers
-                       SET FirstName=%s,
-                           LastName=%s,
-                           Phone=%s,
-                           Address=%s
+                       SET FirstName = %s,
+                           LastName  = %s,
+                           Email     = %s,
+                           Phone     = %s,
+                           Address   = %s
                        WHERE CustomerID = %s
-                       """, (first_name, last_name, phone, address, customer_id))
+                       """, (first_name, last_name, email, phone, address, user_id))
         conn.commit()
-        session['user_name'] = first_name  # Update session name
-        return redirect(url_for('shop_page'))
+        session['user_name'] = first_name
+        return redirect(url_for('customer_panel'))
 
-    cursor.execute("SELECT * FROM Customers WHERE CustomerID = %s", (customer_id,))
-    customer = cursor.fetchone()
+    # Fetch current data to pre-fill the form
+    cursor.execute("SELECT * FROM Customers WHERE CustomerID = %s", (user_id,))
+    user_data = cursor.fetchone()
+
     cursor.close()
     conn.close()
-    return render_template('edit_profile.html', customer=customer)
+    return render_template('edit_profile.html', user=user_data)
 
 # Update Add to Cart to use Session instead of form input
 @app.route('/add_to_cart', methods=['POST'])
@@ -153,6 +268,65 @@ def add_to_cart():
     cursor.close()
     conn.close()
 
+    return redirect(url_for('view_cart', customer_id=user_id))
+
+
+@app.route('/delete_from_cart/<int:product_id>', methods=['POST'])
+def delete_from_cart(product_id):
+    # Verify the user is logged in
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Delete the specific product for this specific customer
+    cursor.execute("""
+                   DELETE
+                   FROM Carts
+                   WHERE CustomerID = %s
+                     AND ProductID = %s
+                   """, (user_id, product_id))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    # Redirect back to the cart page to show the updated list
+    return redirect(url_for('view_cart', customer_id=user_id))
+
+
+@app.route('/update_cart', methods=['POST'])
+def update_cart():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Get all product IDs and quantities from the form
+    # The form will send data like {'qty_1': '5', 'qty_2': '3'}
+    for key, value in request.form.items():
+        if key.startswith('qty_'):
+            product_id = key.split('_')[1]
+            try:
+                quantity = int(value)
+                if quantity > 0:
+                    cursor.execute("""
+                        UPDATE Carts SET Quantity = %s 
+                        WHERE CustomerID = %s AND ProductID = %s
+                    """, (quantity, user_id, product_id))
+                else:
+                    # If quantity is 0, remove it
+                    cursor.execute("DELETE FROM Carts WHERE CustomerID = %s AND ProductID = %s", (user_id, product_id))
+            except ValueError:
+                continue
+
+    conn.commit()
+    cursor.close()
+    conn.close()
     return redirect(url_for('view_cart', customer_id=user_id))
 
 @app.route('/cart/<int:customer_id>')
@@ -198,7 +372,7 @@ def checkout(customer_id):
     total_amount = sum(((item['UnitPrice'] - item['Discount']) * item['Quantity']) for item in cart_items)
 
     # 3. Create a Transaction record (defaulting to EmployeeID 1 as the processor)
-    # The database requires EmployeeID [cite: 52]
+    # The database requires EmployeeID
     cursor.execute("""
                    INSERT INTO Transactions (TransactionTimestamp, TotalAmount, CustomerID, EmployeeID)
                    VALUES (%s, %s, %s, %s)
@@ -714,11 +888,6 @@ def delete_warehouse(Ware_id):
     cursor.close()
     conn.close()
     return redirect(url_for('admin_warehouse'))
-
-########################################################################################################################
-########################################    Transaction      #############################################################
-########################################################################################################################
-
 
 if __name__ == '__main__':
     app.run(debug=True)
