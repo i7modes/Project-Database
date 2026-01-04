@@ -354,47 +354,96 @@ def view_cart(customer_id):
     return render_template('cart.html', items=items, total=total, customer_id=customer_id)
 
 
+from datetime import datetime
+
+
 @app.route('/checkout/<int:customer_id>', methods=['POST'])
 def checkout(customer_id):
+    if session.get('user_id') != customer_id:
+        return redirect(url_for('login'))
+
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
     # 1. Get current cart items
-    cursor.execute(
-        "SELECT C.*, P.UnitPrice, P.Discount FROM Carts C JOIN Products P ON C.ProductID = P.ProductID WHERE CustomerID = %s",
-        (customer_id,))
+    cursor.execute("""
+                   SELECT C.*, P.UnitPrice, P.Discount
+                   FROM Carts C
+                            JOIN Products P ON C.ProductID = P.ProductID
+                   WHERE CustomerID = %s
+                   """, (customer_id,))
     cart_items = cursor.fetchall()
 
     if not cart_items:
+        cursor.close()
+        conn.close()
         return redirect(url_for('shop_page'))
 
-    # 2. Calculate Total Amount
     total_amount = sum(((item['UnitPrice'] - item['Discount']) * item['Quantity']) for item in cart_items)
 
-    # 3. Create a Transaction record (defaulting to EmployeeID 1 as the processor)
-    # The database requires EmployeeID
-    cursor.execute("""
-                   INSERT INTO Transactions (TransactionTimestamp, TotalAmount, CustomerID, EmployeeID)
-                   VALUES (%s, %s, %s, %s)
-                   """, (datetime.now(), total_amount, customer_id, 1))
-    transaction_id = cursor.lastrowid
+    try:
+        # 2. Check Total Global Stock for every item first
+        for item in cart_items:
+            cursor.execute("SELECT SUM(Quantity) as global_qty FROM WarehouseStock WHERE ProductID = %s",
+                           (item['ProductID'],))
+            row = cursor.fetchone()
+            global_stock = row['global_qty'] if row['global_qty'] else 0
 
-    # 4. Move items to TransactionItems (Historical record)
-    for item in cart_items:
-        price_paid = item['UnitPrice'] - item['Discount']
+            if global_stock < item['Quantity']:
+                return f"Error: Not enough total stock for {item['ProductID']}. Available: {global_stock}", 400
+
+        # 3. Create Transaction
         cursor.execute("""
-                       INSERT INTO TransactionItems (TransactionID, ProductID, Quantity, PriceAtTimeOfSale)
+                       INSERT INTO Transactions (TransactionTimestamp, TotalAmount, CustomerID, EmployeeID)
                        VALUES (%s, %s, %s, %s)
-                       """, (transaction_id, item['ProductID'], item['Quantity'], price_paid))
+                       """, (datetime.now(), total_amount, customer_id, 1))
+        transaction_id = cursor.lastrowid
 
-    # 5. Clear the cart
-    cursor.execute("DELETE FROM Carts WHERE CustomerID = %s", (customer_id,))
+        # 4. Deduct Stock and Record Items
+        for item in cart_items:
+            remaining_to_deduct = item['Quantity']
+            price_paid = item['UnitPrice'] - item['Discount']
 
-    conn.commit()
-    cursor.close()
-    conn.close()
-    return "Purchase Successful! <a href='/'>Return to Shop</a>"
+            # Record historical sale
+            cursor.execute("""
+                           INSERT INTO TransactionItems (TransactionID, ProductID, Quantity, PriceAtTimeOfSale)
+                           VALUES (%s, %s, %s, %s)
+                           """, (transaction_id, item['ProductID'], item['Quantity'], price_paid))
 
+            # Deduct from warehouses sequentially
+            cursor.execute(
+                "SELECT WarehouseID, Quantity FROM WarehouseStock WHERE ProductID = %s AND Quantity > 0 ORDER BY WarehouseID ASC",
+                (item['ProductID'],))
+            stocks = cursor.fetchall()
+
+            for stock in stocks:
+                if remaining_to_deduct <= 0:
+                    break
+
+                if stock['Quantity'] >= remaining_to_deduct:
+                    # Current warehouse can cover the rest
+                    cursor.execute(
+                        "UPDATE WarehouseStock SET Quantity = Quantity - %s WHERE WarehouseID = %s AND ProductID = %s",
+                        (remaining_to_deduct, stock['WarehouseID'], item['ProductID']))
+                    remaining_to_deduct = 0
+                else:
+                    # Drain this warehouse and move to next
+                    cursor.execute("UPDATE WarehouseStock SET Quantity = 0 WHERE WarehouseID = %s AND ProductID = %s",
+                                   (stock['WarehouseID'], item['ProductID']))
+                    remaining_to_deduct -= stock['Quantity']
+
+        # 5. Clear Cart
+        cursor.execute("DELETE FROM Carts WHERE CustomerID = %s", (customer_id,))
+        conn.commit()
+
+    except Exception as e:
+        conn.rollback()
+        return f"Database Error: {str(e)}", 500
+    finally:
+        cursor.close()
+        conn.close()
+
+    return render_template('checkout_success.html', transaction_id=transaction_id)
 @app.route('/admin')
 def admin():
     # 1. Check if user is logged in

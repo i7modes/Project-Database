@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Order Confirmed | Al-Salam</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shop.css') }}">
+</head>
+<body style="background-color: #f3f4f6; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0;">
+
+    <div class="card" style="max-width: 500px; width: 90%; text-align: center; padding: 50px 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+        <div style="background: #d1fae5; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 25px;">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="#059669">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+            </svg>
+        </div>
+
+        <h1 style="color: #064e3b; margin-bottom: 10px;">Purchase Successful!</h1>
+        <p style="color: #6b7280; margin-bottom: 30px;">Thank you for shopping at Al-Salam Supermarket. Your order <strong>#{{ transaction_id }}</strong> has been processed.</p>
+
+        <div style="display: flex; flex-direction: column; gap: 15px;">
+            <a href="{{ url_for('shop_page') }}" class="cart-action-btn" style="text-decoration: none;">
+                🛍️ Continue Shopping
+            </a>
+            <a href="{{ url_for('customer_panel') }}" style="color: #064e3b; text-decoration: none; font-weight: bold; font-size: 0.95em;">
+                Go to My Account →
+            </a>
+        </div>
+    </div>
+
+</body>
+</html>
