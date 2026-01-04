@@ -2,27 +2,38 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Login - Al-Salam</title>
+    <title>Login - Al-Salam Supermarket</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body style="background: #f3f4f6; display: flex; justify-content: center; align-items: center; height: 100vh;">
+<body style="background: #f3f4f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;">
 
-    <div class="card" style="width: 100%; max-width: 400px; padding: 40px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-        <h2 style="text-align: center; color: #064e3b; margin-bottom: 30px;">Customer Login</h2>
-        <hr>
+    <div class="card" style="width: 100%; max-width: 400px; padding: 40px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-radius: 12px; background: white;">
+        <h2 style="text-align: center; color: #064e3b; margin-bottom: 10px;">Login</h2>
+        <p style="text-align: center; color: #666; margin-bottom: 25px;">Welcome back to Al-Salam Supermarket.</p>
+        <hr style="border: 0; border-top: 1px solid #eee; margin-bottom: 30px;">
 
         <form method="POST">
-            <label style="display: block; font-weight: bold; margin-bottom: 8px;">Email Address</label>
+            <label style="display: block; font-weight: bold; margin-bottom: 8px; color: #374151;">Email Address</label>
             <input type="email" name="email" required placeholder="name@email.com"
-                   style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px;">
+                   style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px; box-sizing: border-box;">
 
-            <label style="display: block; font-weight: bold; margin-bottom: 8px;">Password</label>
+            <label style="display: block; font-weight: bold; margin-bottom: 8px; color: #374151;">Password</label>
             <input type="password" name="password" required placeholder="••••••••"
-                   style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 30px;">
+                   style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 30px; box-sizing: border-box;">
 
-            <div class="actions" style="display: flex; flex-direction: column; gap: 10px;">
-                <button class="primary" type="submit" style="width: 100%; padding: 12px;">Login</button>
-                <a href="{{ url_for('shop_page') }}" style="text-align: center; color: #7f8c8d; text-decoration: none; font-size: 14px;">Back to Shop</a>
+            <div class="actions" style="display: flex; flex-direction: column; gap: 15px;">
+                <button class="primary" type="submit" style="width: 100%; padding: 12px; font-weight: bold; cursor: pointer; background: #064e3b; color: white; border: none; border-radius: 8px;">
+                    Login
+                </button>
+
+                <p style="text-align: center; font-size: 14px; margin: 0; color: #4b5563;">
+                    Don't have an account?
+                    <a href="{{ url_for('register') }}" style="color: #3498db; text-decoration: none; font-weight: 600;">Register Now</a>
+                </p>
+
+                <a href="{{ url_for('shop_page') }}" style="text-align: center; color: #7f8c8d; text-decoration: none; font-size: 14px; margin-top: 5px;">
+                    Back to Shop
+                </a>
             </div>
         </form>
     </div>

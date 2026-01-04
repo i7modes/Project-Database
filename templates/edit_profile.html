@@ -2,37 +2,46 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>My Profile</title>
+    <title>Edit Information | Al-Salam</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shop.css') }}">
 </head>
-<body>
+<body style="background-color: #f9fafb; padding: 40px 0;">
 
-<div class="container">
-    <h1>👤 My Profile</h1>
-    <p>Update your personal information below.</p>
-    <hr>
+    <div class="container" style="max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #064e3b; color: white; padding: 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="margin: 0;">Edit My Information</h2>
+            <a href="{{ url_for('customer_panel') }}" style="color: white; text-decoration: none; font-weight: bold;">← Back to Panel</a>
+        </div>
 
-    <div class="card">
-        <form method="POST">
-            <label>First Name</label>
-            <input type="text" name="first_name" value="{{ customer.FirstName }}" required style="width: 100%; padding: 10px; margin-bottom: 15px;">
+        <div class="card" style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+            <form method="POST">
+                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <div style="flex: 1;">
+                        <label style="display: block; font-weight: bold; margin-bottom: 5px;">First Name</label>
+                        <input type="text" name="first_name" value="{{ user.FirstName }}" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="display: block; font-weight: bold; margin-bottom: 5px;">Last Name</label>
+                        <input type="text" name="last_name" value="{{ user.LastName }}" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+                    </div>
+                </div>
 
-            <label>Last Name</label>
-            <input type="text" name="last_name" value="{{ customer.LastName }}" required style="width: 100%; padding: 10px; margin-bottom: 15px;">
+                <label style="display: block; font-weight: bold; margin-bottom: 5px;">Email Address</label>
+                <input type="email" name="email" value="{{ user.Email }}" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px;">
 
-            <label>Phone Number</label>
-            <input type="text" name="phone" value="{{ customer.Phone or '' }}" style="width: 100%; padding: 10px; margin-bottom: 15px;">
+                <label style="display: block; font-weight: bold; margin-bottom: 5px;">Phone Number</label>
+                <input type="text" name="phone" value="{{ user.Phone }}" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px;">
 
-            <label>Delivery Address</label>
-            <input type="text" name="address" value="{{ customer.Address or '' }}" style="width: 100%; padding: 10px; margin-bottom: 20px;">
+                <label style="display: block; font-weight: bold; margin-bottom: 5px;">Address</label>
+                <textarea name="address" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; height: 100px; margin-bottom: 25px;">{{ user.Address }}</textarea>
 
-            <div class="actions">
-                <button class="btn btn-primary" type="submit">Update Profile</button>
-                <a href="{{ url_for('shop_page') }}" class="btn btn-dark" style="text-decoration: none;">Back to Shop</a>
-            </div>
-        </form>
+                <button type="submit" class="cart-action-btn" style="width: 100%;">
+                    💾 Save All Changes
+                </button>
+            </form>
+        </div>
     </div>
-</div>
 
 </body>
 </html>
