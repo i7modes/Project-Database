@@ -397,6 +397,15 @@ def checkout(customer_id):
 
 @app.route('/admin')
 def admin():
+    # 1. Check if user is logged in
+    user_id = session.get('user_id')
+    user_role = session.get('role')
+
+    # 2. Verify they have the 'Admin' role
+    if not user_id or user_role != 'Admin':
+        return redirect(url_for('login'))
+
+    # 3. If they are an Admin, proceed to fetch data for the dashboard
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
