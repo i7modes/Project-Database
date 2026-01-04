@@ -458,12 +458,37 @@ def admin():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    cursor.execute("SELECT ProductID,Name,UnitPrice,Discount FROM products")
-    products = cursor.fetchall()
+    # Total revenue
+    cursor.execute("SELECT SUM(TotalAmount) AS Total FROM Transactions")
+    total_revenue = cursor.fetchone()
+
+    cursor.execute("SELECT count(CustomerID) AS Total FROM Customers")
+    customer_count = cursor.fetchone()
+
+    cursor.execute("SELECT count(ProductID) AS Total FROM Products")
+    product_count = cursor.fetchone()
+
+    # Top 3 best sellers
+    cursor.execute("""
+        SELECT P.Name, COALESCE(SUM(T.Quantity * T.PriceAtTimeOfSale), 0) AS TotalRevenue
+        FROM TransactionItems T
+        JOIN Products P ON T.ProductID = P.ProductID
+        GROUP BY P.ProductID, P.Name
+        ORDER BY TotalRevenue DESC
+        LIMIT 3
+        """)
+    top_sellers = cursor.fetchall()
 
     cursor.close()
     conn.close()
-    return render_template('admin.html',products=products)
+
+    return render_template(
+        'admin.html',
+        total_revenue=total_revenue,
+        customer_count=customer_count,
+        product_count=product_count,
+        top_sellers=top_sellers
+    )
 
 ########################################################################################################################
 ########################################    Customer      ##############################################################
@@ -479,70 +504,6 @@ def admin_customer():
     conn.close()
     return render_template('admin_customer.html', customer=customer)
 
-@app.route('/add_customer', methods=['GET', 'POST'])
-def add_customer():
-    if request.method == 'POST':
-        first_name = request.form['first_name']
-        last_name = request.form['last_name']
-        email = request.form['email']
-        password = request.form['password']
-        phone = request.form['phone']
-        address = request.form['address']
-
-        conn = get_db_connection()
-        cursor = conn.cursor()
-
-        query = """
-        INSERT INTO Customers (FirstName, LastName, Email, Password, Phone, Address)
-        VALUES (%s, %s, %s, %s, %s, %s)
-        """
-        values = (first_name, last_name, email, password, phone, address)
-
-        cursor.execute(query, values)
-        conn.commit()
-
-        cursor.close()
-        conn.close()
-
-        return redirect(url_for('admin_customer'))
-
-    return render_template('add_customer.html')
-
-@app.route('/edit_customer/<int:customer_id>', methods=['GET', 'POST'])
-def edit_customer(customer_id):
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-
-    if request.method == 'POST':
-        first_name = request.form['first_name']
-        last_name  = request.form['last_name']
-        email      = request.form['email']
-        password   = request.form['password']
-        phone      = request.form['phone']
-        address    = request.form['address']
-
-        cursor2 = conn.cursor()
-        query = """
-            UPDATE Customers
-            SET FirstName=%s, LastName=%s, Email=%s, Password=%s, Phone=%s, Address=%s
-            WHERE CustomerID=%s
-        """
-        values = (first_name, last_name, email, password, phone, address, customer_id)
-        cursor2.execute(query, values)
-        conn.commit()
-        cursor2.close()
-
-        cursor.close()
-        conn.close()
-        return redirect(url_for('admin_customer'))
-
-    cursor.execute("SELECT * FROM Customers WHERE CustomerID = %s", (customer_id,))
-    customer = cursor.fetchone()
-
-    cursor.close()
-    conn.close()
-
-    return render_template('edit_customer.html', customer=customer)
 
 
 @app.route('/delete_customer/<int:customer_id>', methods=['POST'])

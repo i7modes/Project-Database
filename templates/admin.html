@@ -32,20 +32,17 @@
     <div class="grid">
         <div class="card">
             <p class="stat-title">Total Revenue</p>
-            <div class="stat-value money">${{ total_revenue }}</div>
-            <p class="stat-note">Sum of TotalAmount from Transactions table</p>
+            <div class="stat-value money">${{ total_revenue.Total }}</div>
         </div>
 
         <div class="card">
             <p class="stat-title">Total Customers</p>
-            <div class="stat-value">{{ customer|length }}</div>
-            <p class="stat-note">Registered customers in the system</p>
+            <div class="stat-value">{{ customer_count.Total }}</div>
         </div>
 
         <div class="card">
             <p class="stat-title">Total Products</p>
-            <div class="stat-value">{{ organic_products|length }}</div>
-            <p class="stat-note">Products stored in the database</p>
+            <div class="stat-value">{{ product_count.Total }}</div>
         </div>
     </div>
 
@@ -54,7 +51,7 @@
     <div class="section" id="top">
         <h2>🏆 Top Sellers <span class="pill">Top 3</span></h2>
         <div class="card">
-            {% if top_sellers and top_sellers|length > 0 %}
+            {% if top_sellers %}
             <table>
                 <thead>
                     <tr>
