@@ -21,10 +21,11 @@
         </div>
 
         <div class="top-actions">
-            <a class="btn btn-dark" href="{{ url_for('admin_customer') }}">👤 Customers</a>
-            <a class="btn btn-dark" href="{{ url_for('admin_employee') }}">🪪 Employee</a>
-            <a class="btn btn-dark" href="{{ url_for('admin_product') }}">🧺 Products</a>
-            <a class="btn btn-dark" href="{{ url_for('admin_warehouse') }}">🏤 Warehouse</a>
+            <a class="btn btn-dark" href="{{ url_for('admin_customer') }}">Customers</a>
+            <a class="btn btn-dark" href="{{ url_for('admin_employee') }}">Employee</a>
+            <a class="btn btn-dark" href="{{ url_for('admin_category') }}">category</a>
+            <a class="btn btn-dark" href="{{ url_for('admin_product') }}">Products</a>
+            <a class="btn btn-dark" href="{{ url_for('admin_warehouse') }}">Warehouse</a>
         </div>
     </div>
 
@@ -76,7 +77,7 @@
 
 </div>
     <a href="{{ url_for('shop_page') }}">
-        <button class="back-btn" onclick="history.back()">← Back</button>
+        <button class="back-btn" onclick="history.back()">← Back to shop</button>
     </a>
 
 </body>

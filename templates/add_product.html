@@ -22,7 +22,7 @@
         <input type="number" name="discount" step="0.01" value="0.00">
 
         <label>Category</label>
-        <select name="category_id">
+        <select name="category_id" required>
             <option value="">(No Category)</option>
             {% for c in categories %}
                 <option value="{{ c.CategoryID }}">{{ c.Name }}</option>
@@ -40,6 +40,5 @@
         </div>
     </form>
 </div>
-<button class="back-btn" onclick="history.back()">← Back</button>
 </body>
 </html>

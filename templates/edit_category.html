@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Category</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h2>Edit Category</h2>
+
+    <form method="POST" class="card">
+        <label>Category Name</label>
+        <input type="text" name="name" value="{{ category.Name }}" required>
+
+        <div class="actions">
+            <button class="primary" type="submit">Save category</button>
+            <a href="{{ url_for('admin_category') }}">
+                <button class="secondary" type="button">Back</button>
+            </a>
+        </div>
+    </form>
+
+</body>
+</html>

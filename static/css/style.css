@@ -25,8 +25,8 @@ body{
 
 /* Top Bar */
 .topbar{
-    background: linear-gradient(135deg, var(--brand), var(--brand2));
-    color:#fff;
+    background: #2e7d32;
+    color:#ffffff;
     border-radius: 16px;
     padding: 18px 18px;
     display:flex;
@@ -109,6 +109,7 @@ body{
     box-shadow: 0 6px 18px rgba(17, 24, 39, 0.04);
 }
 
+
 .stat-title{
     margin:0;
     color: var(--muted);
@@ -173,6 +174,7 @@ tr:hover td{ background:#fafafa; }
     align-items:center;
     justify-content: flex-start;
     flex-wrap: wrap;
+
 }
 .btn-small{
     padding: 7px 10px;
@@ -193,23 +195,36 @@ tr:hover td{ background:#fafafa; }
     background: var(--danger);
     color:#fff;
 }
+/* =========================
+   Back Button – Green
+========================= */
 .back-btn {
     position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 10px 16px;
-    background-color: #2c3e50;
+    top: 18px;
+    right: 18px;
+    background: #2e7d32;
     color: white;
     border: none;
-    border-radius: 8px;
-    font-size: 14px;
+    padding: 9px 16px;
+    border-radius: 12px;
+    font-weight: 700;
     cursor: pointer;
+    box-shadow: 0 3px 12px rgba(46,125,50,0.35);
+    transition: all 0.2s ease;
     z-index: 1000;
 }
 
 .back-btn:hover {
-    background-color: #1f2d3d;
+    background: #1b5e20;
+    transform: translateY(-1px);
 }
+
+/* Active */
+.back-btn:active{
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(46,125,50,0.45);
+}
+
 
 .money{
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -247,38 +262,215 @@ tr:hover td{ background:#fafafa; }
 /* form */
 label {
     display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-    color: #34495e;
+    margin-top: 14px;
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: #2e7d32;
 }
 
-input {
+
+input, select {
     width: 100%;
-    padding: 10px;
-    margin-bottom: 15px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #c8e6c9;
     font-size: 14px;
+    transition: all 0.2s ease;
 }
 
-select {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 15px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    font-size: 14px;
-    background-color: #ffffff;
-    color: #2c3e50;
-    cursor: pointer;
-}
-
-select:focus {
+input:focus, select:focus {
     outline: none;
-    border-color: #2c3e50;
-    box-shadow: 0 0 3px rgba(44, 62, 80, 0.4);
+    border-color: #2e7d32;
+    box-shadow: 0 0 0 2px rgba(46,125,50,0.15);
 }
+
 
 select option[value=""] {
     color: #999;
 }
+
+.primary {
+    background: #2e7d32;
+    color: #ffffff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.primary:hover {
+    background: #1b5e20;
+}
+
+.secondary {
+    background: #e8f5e9;
+    color: #2e7d32;
+    border: 1px solid #a5d6a7;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.secondary:hover {
+    background: #c8e6c9;
+}
+
+.floating-btn{
+    top: 70px;
+}
+
+.top-actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+}
+.top-actions .btn{
+    white-space:nowrap;
+}
+/* =========================
+   Customers Page Tweaks
+   (paste at end of style.css)
+========================= */
+
+/* Make page content centered nicely */
+.section{
+  max-width: 1000px;
+  margin: 28px auto;
+  padding: 0 16px;
+}
+
+/* Section title look */
+.section h2{
+  margin: 0 0 10px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  color:#2c3e50;
+}
+
+/* Small pill next to title */
+.pill{
+  display:inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #eef2f7;
+  color: #34495e;
+  border: 1px solid #dde6f1;
+}
+
+/* Card polish (if you already have .card, this will enhance it) */
+.card{
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  padding: 16px;
+}
+
+/* Table improvements */
+table{
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  overflow: hidden;
+  border-radius: 10px;
+  text-align: left;
+
+}
+
+thead th{
+  background: #2e7d32;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: .2px;
+}
+
+th, td{
+  padding: 12px 10px;
+  border-bottom: 1px solid #c8e6c9;
+  vertical-align: middle;
+  text-align: left;
+
+}
+
+tbody tr:hover{
+  background: #f6f8fb;
+}
+
+/* Money style */
+.money{
+  color: #2e7d32;
+  font-weight: 700;
+}
+
+/* Actions column */
+.actions {
+    margin-top: 22px;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+/* Buttons base */
+.btn{
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 10px 14px;
+  display:inline-flex;
+  align-items:center;
+  gap: 6px;
+}
+
+/* Small buttons */
+.btn-small{
+  padding: 8px 10px;
+  font-size: 12px;
+  border-radius: 8px;
+}
+
+/* Delete button */
+.btn-delete{
+  background: #c0392b;
+  color: #fff;
+}
+.btn-delete:hover{
+  background: #a93226;
+}
+
+/* Empty state */
+.empty{
+  padding: 14px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.msg{
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-weight: 700;
+  margin: 12px 0;
+}
+
+.msg.success{
+  background: #e8f5e9;
+  color: #1b5e20;
+  border: 1px solid #a5d6a7;
+}
+
+.msg.error{
+  background: #ffebee;
+  color: #b71c1c;
+  border: 1px solid #ef9a9a;
+}
+

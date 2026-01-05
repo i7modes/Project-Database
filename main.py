@@ -634,7 +634,7 @@ def admin_product():
                C.Name AS CategoryName, P.CategoryID
         FROM Products P
         LEFT JOIN Categories C ON P.CategoryID = C.CategoryID
-        ORDER BY P.ProductID DESC
+        ORDER BY P.ProductID
     """)
     products = cursor.fetchall()
 
@@ -907,6 +907,87 @@ def delete_warehouse(Ware_id):
     cursor.close()
     conn.close()
     return redirect(url_for('admin_warehouse'))
+
+########################################################################################################################
+########################################    Categories      #############################################################
+########################################################################################################################
+@app.route('/admin_category')
+def admin_category():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("SELECT CategoryID, Name FROM Categories")
+    categories = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template('admin_category.html', categories=categories)
+
+@app.route('/add_category', methods=['GET', 'POST'])
+def add_category():
+    if request.method == 'POST':
+        name = request.form['name']
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO Categories (Name) VALUES (%s)", (name,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        return redirect(url_for('admin_category'))
+
+    return render_template('add_category.html')
+
+@app.route('/edit_category/<int:cat_id>', methods=['GET', 'POST'])
+def edit_category(cat_id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    if request.method == 'POST':
+        name = request.form['name']
+        cursor2 = conn.cursor()
+        cursor2.execute(
+            "UPDATE Categories SET Name=%s WHERE CategoryID=%s",
+            (name, cat_id)
+        )
+        conn.commit()
+        cursor2.close()
+
+        cursor.close()
+        conn.close()
+        return redirect(url_for('admin_category'))
+
+    cursor.execute("SELECT * FROM Categories WHERE CategoryID=%s", (cat_id,))
+    category = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    return render_template('edit_category.html', category=category)
+
+@app.route('/delete_category/<int:cat_id>', methods=['POST'])
+def delete_category(cat_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("DELETE FROM Categories WHERE CategoryID=%s", (cat_id,))
+        conn.commit()
+        msg = "Category deleted successfully"
+        msg_type = "success"
+
+    except mysql.connector.Error as err:
+
+            msg = "Cannot delete this category because it has products. Move/delete products first."
+            msg_type = "error"
+
+    finally:
+        cursor.close()
+        conn.close()
+
+    return redirect(url_for('admin_category', msg=msg, type=msg_type))
 
 if __name__ == '__main__':
     app.run(debug=True)

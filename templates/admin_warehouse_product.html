@@ -10,7 +10,7 @@
 
 <div class="section" id="products">
     <h2>Warehouse Products <span class="pill">Manage (View / Edit / Delete)</span></h2>
-
+    <hr>
     <a class="btn btn-primary" href="{{ url_for('add_warehouse_product',Ware_id=Ware_id) }}">➕ Add Product</a>
 
     <div class="card">
@@ -21,7 +21,7 @@
                     <th>PID</th>
                     <th>Name</th>
                     <th>Quantity</th>
-                    <th>Actions</th>
+                    <th style="width:180px;">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -55,7 +55,7 @@
     </div>
 </div>
     <a href="{{ url_for('admin_warehouse') }}">
-        <button class="back-btn" onclick="history.back()">← Back</button>
+        <button class="back-btn">← Back</button>
     </a>
 </body>
 </html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Category</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h2>➕ Add Category</h2>
+    <div class="card">
+        <form method="POST">
+            <label>Category Name</label>
+            <input type="text" name="name" required>
+
+            <div class="actions">
+            <button class="primary" type="submit">Save category</button>
+            <a href="{{ url_for('admin_category') }}">
+                <button class="secondary" type="button">Back</button>
+            </a>
+            </div>
+        </form>
+    <div>
+
+
+
+
+
+</body>
+</html>
