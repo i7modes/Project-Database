@@ -988,6 +988,68 @@ def delete_category(cat_id):
         conn.close()
 
     return redirect(url_for('admin_category', msg=msg, type=msg_type))
+########################################################################################################################
+########################################  Transaction ###############################################################
+########################################################################################################################
+@app.route('/admin_transaction')
+def admin_transaction():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
+    cursor.execute("""
+        SELECT
+            T.TransactionID,
+            T.TransactionTimestamp,
+            T.TotalAmount,
+            CONCAT(C.FirstName, ' ', C.LastName) AS CustomerName
+        FROM Transactions T LEFT JOIN Customers C ON T.CustomerID = C.CustomerID
+        ORDER BY T.TransactionID
+    """)
+    transactions = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template('admin_transaction.html', transactions=transactions)
+
+
+@app.route('/admin_transaction/<int:transaction_id>')
+def admin_transaction_details(transaction_id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT
+            T.TransactionID,
+            T.TransactionTimestamp,
+            T.TotalAmount,
+            CONCAT(C.FirstName, ' ', C.LastName) AS CustomerName,
+            CONCAT(E.FirstName, ' ', E.LastName) AS EmployeeName
+        FROM Transactions T
+        LEFT JOIN Customers C ON T.CustomerID = C.CustomerID
+        LEFT JOIN Employees E ON T.EmployeeID = E.EmployeeID
+        WHERE T.TransactionID = %s
+    """, (transaction_id,))
+    txn = cursor.fetchone()
+
+    cursor.execute("""
+        SELECT
+            P.Name,
+            TI.Quantity,
+            TI.PriceAtTimeOfSale,
+            (TI.Quantity * TI.PriceAtTimeOfSale) AS LineTotal
+        FROM TransactionItems TI
+        JOIN Products P ON TI.ProductID = P.ProductID
+        WHERE TI.TransactionID = %s
+    """, (transaction_id,))
+    items = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template('admin_transaction_details.html', txn=txn, items=items)
+
+
+    return redirect(url_for('admin_employee'))
 if __name__ == '__main__':
     app.run(debug=True)

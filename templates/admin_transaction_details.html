@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<h2>🧾 Transaction Details</h2>
+
+<div class="card">
+    <p><b>ID:</b> {{ txn.TransactionID }}</p>
+    <p><b>Date:</b> {{ txn.TransactionTimestamp }}</p>
+    <p><b>Customer:</b> {{ txn.CustomerName }}</p>
+    <p><b>Total:</b> <span class="money">${{ txn.TotalAmount }}</span></p>
+</div>
+
+<div class="card">
+<table>
+    <thead>
+        <tr>
+            <th>Product</th>
+            <th>Qty</th>
+            <th>Price</th>
+            <th>Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for i in items %}
+        <tr>
+            <td>{{ i.Name }}</td>
+            <td>{{ i.Quantity }}</td>
+            <td class="money">${{ i.PriceAtTimeOfSale }}</td>
+            <td class="money">${{ i.LineTotal }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+<a href="{{ url_for('admin_transaction') }}" class="back-btn">← Back</a>
+
+</body>
+</html>
