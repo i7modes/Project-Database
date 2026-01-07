@@ -474,3 +474,58 @@ tbody tr:hover{
   border: 1px solid #ef9a9a;
 }
 
+/* ===== Layout ===== */
+.layout{
+    display: flex;
+    min-height: 100vh;
+    background: #f6f8fb;
+}
+
+/* ===== Sidebar ===== */
+.sidebar{
+    width: 230px;
+    background: #2e7d32;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 16px;
+}
+
+.sidebar-brand{
+    font-size: 20px;
+    font-weight: 800;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+/* Menu */
+.sidebar-menu{
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sidebar-menu a{
+    color: white;
+    text-decoration: none;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+
+.sidebar-menu a:hover{
+    background: rgba(255,255,255,0.15);
+}
+
+/* Active page */
+.sidebar-menu a.active{
+    background: rgba(255,255,255,0.25);
+}
+
+/* ===== Main Content ===== */
+.main-content{
+    flex: 1;
+    padding: 30px;
+    position: relative;
+}

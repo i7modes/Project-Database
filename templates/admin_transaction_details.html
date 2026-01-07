@@ -6,13 +6,13 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-<h2>🧾 Transaction Details</h2>
+<h2>Transaction Details</h2>
 
 <div class="card">
-    <p><b>ID:</b> {{ txn.TransactionID }}</p>
-    <p><b>Date:</b> {{ txn.TransactionTimestamp }}</p>
-    <p><b>Customer:</b> {{ txn.CustomerName }}</p>
-    <p><b>Total:</b> <span class="money">${{ txn.TotalAmount }}</span></p>
+    <p><b>ID:</b> {{ detail.TransactionID }}</p>
+    <p><b>Date:</b> {{ detail.TransactionTimestamp }}</p>
+    <p><b>Customer:</b> {{ detail.CustomerName }}</p>
+    <p><b>Total:</b> <span class="money">${{ detail.TotalAmount }}</span></p>
 </div>
 
 <div class="card">
@@ -20,7 +20,7 @@
     <thead>
         <tr>
             <th>Product</th>
-            <th>Qty</th>
+            <th>Quantity</th>
             <th>Price</th>
             <th>Total</th>
         </tr>
@@ -38,7 +38,8 @@
 </table>
 </div>
 
-<a href="{{ url_for('admin_transaction') }}" class="back-btn">← Back</a>
-
+<a href="{{ url_for('admin_transaction') }}">
+    <button class="back-btn">← Back</button>
+</a>
 </body>
 </html>

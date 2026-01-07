@@ -1023,33 +1023,30 @@ def admin_transaction_details(transaction_id):
             T.TransactionID,
             T.TransactionTimestamp,
             T.TotalAmount,
-            CONCAT(C.FirstName, ' ', C.LastName) AS CustomerName,
-            CONCAT(E.FirstName, ' ', E.LastName) AS EmployeeName
+            CONCAT(C.FirstName, ' ', C.LastName) AS CustomerName
         FROM Transactions T
         LEFT JOIN Customers C ON T.CustomerID = C.CustomerID
-        LEFT JOIN Employees E ON T.EmployeeID = E.EmployeeID
         WHERE T.TransactionID = %s
     """, (transaction_id,))
-    txn = cursor.fetchone()
+    detail = cursor.fetchone()
 
     cursor.execute("""
         SELECT
             P.Name,
-            TI.Quantity,
-            TI.PriceAtTimeOfSale,
-            (TI.Quantity * TI.PriceAtTimeOfSale) AS LineTotal
-        FROM TransactionItems TI
-        JOIN Products P ON TI.ProductID = P.ProductID
-        WHERE TI.TransactionID = %s
+            T.Quantity,
+            T.PriceAtTimeOfSale,
+            (T.Quantity * T.PriceAtTimeOfSale) AS LineTotal
+        FROM TransactionItems T
+        JOIN Products P ON T.ProductID = P.ProductID
+        WHERE T.TransactionID = %s
     """, (transaction_id,))
     items = cursor.fetchall()
 
     cursor.close()
     conn.close()
 
-    return render_template('admin_transaction_details.html', txn=txn, items=items)
+    return render_template('admin_transaction_details.html', detail=detail, items=items)
 
 
-    return redirect(url_for('admin_employee'))
 if __name__ == '__main__':
     app.run(debug=True)

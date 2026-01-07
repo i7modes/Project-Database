@@ -9,28 +9,33 @@
 </head>
 <body>
 
-<div class="container">
+<div class="layout">
 
-    <!-- Header -->
-    <div class="topbar">
-        <div class="brand">
-            <div class="logo">🛒</div>
-            <div>
-                <h1>Al-Salam Supermarket</h1>
-            </div>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            🛒 Al-Salam Supermarket
         </div>
 
-        <div class="top-actions">
-            <a class="btn btn-dark" href="{{ url_for('admin_customer') }}">Customers</a>
-            <a class="btn btn-dark" href="{{ url_for('admin_employee') }}">Employee</a>
-            <a class="btn btn-dark" href="{{ url_for('admin_category') }}">category</a>
-            <a class="btn btn-dark" href="{{ url_for('admin_product') }}">Products</a>
-            <a class="btn btn-dark" href="{{ url_for('admin_warehouse') }}">Warehouse</a>
-            <a class="btn btn-dark" href="{{ url_for('admin_transaction') }}">Transaction</a>
-        </div>
-    </div>
+        <nav class="sidebar-menu">
+            <a href="{{ url_for('admin') }}" class="active">🏠 Admin page</a>
+            <a href="{{ url_for('admin_customer') }}">👤 Customers</a>
+            <a href="{{ url_for('admin_employee') }}">🪪 Employees</a>
+            <a href="{{ url_for('admin_category') }}">🗂️ Categories</a>
+            <a href="{{ url_for('admin_product') }}">🧺 Products</a>
+            <a href="{{ url_for('admin_warehouse') }}">🏤 Warehouses</a>
+            <a href="{{ url_for('admin_transaction') }}">💳 Transactions</a>
+        </nav>
+    </aside>
 
-    <!-- Stats -->
+    <!-- Main content -->
+    <main class="main-content">
+
+        <!-- زر الرجوع للمحل -->
+            <a href="{{ url_for('shop_page') }}">
+                <button class="back-btn" >← Back to shop</button>
+            </a>
+            <!-- Stats -->
     <div class="grid">
         <div class="card">
             <p class="stat-title">Total Revenue</p>
@@ -75,11 +80,13 @@
             {% endif %}
         </div>
     </div>
+        <!-- محتوى الصفحة (Stats + Tables) -->
+        <!-- ضع هنا الإحصائيات و Top Sellers كما هي -->
+
+    </main>
 
 </div>
-    <a href="{{ url_for('shop_page') }}">
-        <button class="back-btn" onclick="history.back()">← Back to shop</button>
-    </a>
+
 
 </body>
 </html>
