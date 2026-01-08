@@ -3,19 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <title>My Cart - Al-Salam Supermarket</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/shop.css') }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
 </head>
-<body style="background-color: #f3f4f6; padding: 20px;">
+<body style="padding-top: 20px;">
 
-    <div class="container" style="max-width: 1100px; margin: 0 auto;">
-        <div style="background-color: #064e3b; color: white; padding: 12px 20px; border-radius: 8px; display: flex; align-items: center; margin-bottom: 20px;">
+    <div class="container">
+        <div class="cart-header">
             <span style="font-size: 1.5em; margin-right: 12px;">🛒</span>
-            <h2 style="margin: 0; font-size: 1.2em;">Your Shopping Cart</h2>
+            <h2>Your Shopping Cart</h2>
         </div>
 
-        <div class="card" style="background: white; border-radius: 12px; border: 1px solid #e5e7eb; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <div class="card" style="border-radius: 0 0 16px 16px;">
             {% if items %}
             <form action="{{ url_for('update_cart') }}" method="POST">
                 <table class="cart-table">
@@ -23,23 +22,25 @@
                         <tr>
                             <th>Product</th>
                             <th>Unit Price</th>
-                            <th>Qty</th>
+                            <th style="text-align: center;">Qty</th>
                             <th>Subtotal</th>
-                            <th style="text-align: right; padding-right: 30px;">Actions</th>
+                            <th style="text-align: right;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for item in items %}
                         <tr>
-                            <td style="font-weight: 600; color: #374151;">{{ item.Name }}</td>
-                            <td style="color: #6b7280;">${{ "%.2f"|format(item.UnitPrice - item.Discount) }}</td>
                             <td>
+                                <div style="font-weight: 700; color: var(--brand);">{{ item.Name }}</div>
+                            </td>
+                            <td style="color: var(--muted);">${{ "%.2f"|format(item.UnitPrice - item.Discount) }}</td>
+                            <td style="text-align: center;">
                                 <input type="number" name="qty_{{ item.ProductID }}" value="{{ item.Quantity }}" min="1" class="qty-input">
                             </td>
-                            <td style="font-weight: bold; color: #064e3b;">
+                            <td style="font-weight: 800; color: var(--text);">
                                 ${{ "%.2f"|format((item.UnitPrice - item.Discount) * item.Quantity) }}
                             </td>
-                            <td style="text-align: right; padding-right: 20px;">
+                            <td style="text-align: right;">
                                 <button type="submit" form="delete-{{ item.ProductID }}" class="btn-delete">🗑️ Remove</button>
                             </td>
                         </tr>
@@ -47,15 +48,15 @@
                     </tbody>
                 </table>
 
-                <div style="padding: 30px; background: #f9fafb; border-top: 2px solid #eee; text-align: right;">
-                    <h3 style="margin: 0 0 20px 0; color: #374151; font-size: 1.4em;">
-                        Total Amount: <span style="color: #064e3b; font-weight: 800;">${{ "%.2f"|format(total) }}</span>
-                    </h3>
+                <div class="cart-summary">
+                    <div style="margin-bottom: 25px;">
+                        <span style="color: var(--muted); font-weight: 600; text-transform: uppercase; font-size: 0.8em;">Grand Total:</span><br>
+                        <span class="total-amount">${{ "%.2f"|format(total) }}</span>
+                    </div>
                     <div style="display: flex; justify-content: flex-end; gap: 15px; align-items: center;">
-                        <a href="{{ url_for('shop_page') }}" style="text-decoration: none; color: #6b7280; font-weight: 600; margin-right: auto;">← Continue Shopping</a>
-
-                        <button type="submit" class="cart-action-btn">Update Quantities</button>
-                        <button type="submit" form="checkout-form" class="cart-action-btn">Confirm & Purchase</button>
+                        <a href="{{ url_for('shop_page') }}" class="btn-clear" style="margin-right: auto;">← Continue Shopping</a>
+                        <button type="submit" class="cart-action-btn" style="width: auto; background: var(--muted);">🔄 Update Quantities</button>
+                        <button type="submit" form="checkout-form" class="cart-action-btn" style="width: auto; background: var(--brand);">✅ Confirm & Purchase</button>
                     </div>
                 </div>
             </form>
@@ -64,10 +65,12 @@
             {% for item in items %}
             <form id="delete-{{ item.ProductID }}" action="{{ url_for('delete_from_cart', product_id=item.ProductID) }}" method="POST" style="display:none;"></form>
             {% endfor %}
+
             {% else %}
-            <div style="padding: 60px; text-align: center;">
-                <h2>Your cart is empty.</h2>
-                <a href="{{ url_for('shop_page') }}" class="btn btn-primary" style="margin-top: 20px; display: inline-block;">Go to Shop</a>
+            <div style="padding: 80px 20px; text-align: center;">
+                <div style="font-size: 4em; margin-bottom: 10px;">🛒</div>
+                <h2 style="color: var(--muted);">Your cart is empty.</h2>
+                <a href="{{ url_for('shop_page') }}" class="btn-shop-add" style="width: auto; margin-top: 20px; text-decoration: none;">Go to Shop</a>
             </div>
             {% endif %}
         </div>

@@ -18,29 +18,52 @@ def get_db_connection():
 
 
 @app.route('/')
+@app.route('/shop')
 def shop_page():
+    # Get filter parameters from the URL
+    search_query = request.args.get('q', '')
+    category_id = request.args.get('category', '')
+
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    # Check if a customer is logged in via session
-    customer_id = session.get('customer_id')
-    logged_in_user = None
-    if customer_id:
-        cursor.execute("SELECT FirstName FROM Customers WHERE CustomerID = %s", (customer_id,))
-        logged_in_user = cursor.fetchone()
+    # 1. Fetch all categories for the dropdown menu
+    cursor.execute("SELECT * FROM Categories")
+    categories = cursor.fetchall()
 
-    # Fetch products with Category name alias
-    cursor.execute("""
-                   SELECT P.ProductID, P.Name, P.UnitPrice, P.Discount, P.ImageURL, C.Name AS CategoryName
-                   FROM Products P
-                            LEFT JOIN Categories C ON P.CategoryID = C.CategoryID
-                   ORDER BY P.ProductID DESC
-                   """)
+    # 2. Build the Product Query with Filters
+    base_query = """
+                 SELECT P.*, \
+                        Cat.Name                                                                 AS CategoryName,
+                        (SELECT SUM(Quantity) FROM WarehouseStock WHERE ProductID = P.ProductID) AS TotalStock
+                 FROM Products P
+                          LEFT JOIN Categories Cat ON P.CategoryID = Cat.CategoryID
+                 WHERE 1 = 1 \
+                 """
+    params = []
+
+    # Filter by name if search query exists
+    if search_query:
+        base_query += " AND P.Name LIKE %s"
+        params.append(f"%{search_query}%")
+
+    # Filter by category if one is selected
+    if category_id:
+        base_query += " AND P.CategoryID = %s"
+        params.append(category_id)
+
+    cursor.execute(base_query, params)
     products = cursor.fetchall()
 
     cursor.close()
     conn.close()
-    return render_template('shop.html', products=products, logged_in_user=logged_in_user)
+
+    # Pass filters back to template to keep the values in the inputs
+    return render_template('shop.html',
+                           products=products,
+                           categories=categories,
+                           search_query=search_query,
+                           category_id=category_id)
 
 
 @app.route('/login', methods=['GET', 'POST'])
