@@ -502,6 +502,62 @@ def admin():
         """)
     top_sellers = cursor.fetchall()
 
+    # ===== Report 1: Sales Last 7 Days =====
+    cursor.execute("""
+            SELECT 
+                DATE(T.TransactionTimestamp) AS Day,
+                COALESCE(SUM(T.TotalAmount),0) AS Revenue,
+                COUNT(*) AS TransactionsCount
+            FROM Transactions T
+            WHERE T.TransactionTimestamp >= (NOW() - INTERVAL 7 DAY)
+            GROUP BY DATE(T.TransactionTimestamp)
+            ORDER BY Day DESC
+        """)
+    sales_last_7_days = cursor.fetchall()
+
+    # ===== Report 2: Stock Alerts (Out of Stock) =====
+    cursor.execute("""
+            SELECT 
+                P.ProductID, P.Name,
+                COALESCE(SUM(WS.Quantity),0) AS TotalQty
+            FROM Products P
+            LEFT JOIN WarehouseStock WS ON WS.ProductID = P.ProductID
+            GROUP BY P.ProductID, P.Name
+            HAVING TotalQty = 0
+            ORDER BY P.Name
+            LIMIT 10
+        """)
+    out_of_stock = cursor.fetchall()
+
+    # ===== Report 3: Stock Alerts (Low Stock < 5) =====
+    cursor.execute("""
+            SELECT 
+                P.ProductID, P.Name,
+                COALESCE(SUM(WS.Quantity),0) AS TotalQty
+            FROM Products P
+            LEFT JOIN WarehouseStock WS ON WS.ProductID = P.ProductID
+            GROUP BY P.ProductID, P.Name
+            HAVING TotalQty > 0 AND TotalQty < 5
+            ORDER BY TotalQty ASC
+            LIMIT 10
+        """)
+    low_stock = cursor.fetchall()
+
+    # ===== Report 4: Top Customers =====
+    cursor.execute("""
+            SELECT
+              C.CustomerID,
+              CONCAT(C.FirstName,' ',C.LastName) AS CustomerName,
+              COUNT(T.TransactionID) AS OrdersCount,
+              COALESCE(SUM(T.TotalAmount),0) AS TotalSpent
+            FROM Transactions T
+            JOIN Customers C ON C.CustomerID = T.CustomerID
+            GROUP BY C.CustomerID, CustomerName
+            ORDER BY TotalSpent DESC
+            LIMIT 5
+        """)
+    top_customers = cursor.fetchall()
+
     cursor.close()
     conn.close()
 
@@ -510,7 +566,11 @@ def admin():
         total_revenue=total_revenue,
         customer_count=customer_count,
         product_count=product_count,
-        top_sellers=top_sellers
+        top_sellers=top_sellers,
+        sales_last_7_days=sales_last_7_days,
+        out_of_stock=out_of_stock,
+        low_stock=low_stock,
+        top_customers=top_customers
     )
 
 ########################################################################################################################
