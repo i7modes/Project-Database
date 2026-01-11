@@ -81,6 +81,37 @@
         </div>
     </div>
 
+        <!-- Most Sold Products (By Quantity) -->
+<div class="section">
+    <h2>🧺 Most Sold Products <span class="pill">By Quantity</span></h2>
+
+    <div class="card">
+            {% if most_sold_products %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Product</th>
+                        <th>Units Sold</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in most_sold_products %}
+                    <tr>
+                        <td class="money">{{ loop.index }}</td>
+                        <td>{{ p.Name }}</td>
+                        <td class="money">{{ p.UnitsSold }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty">No sales data available.</div>
+            {% endif %}
+        </div>
+    </div>
+
+
     <div class="section">
       <h2>⭐ Top Customers <span class="pill">Top 5</span></h2>
       <div class="card">

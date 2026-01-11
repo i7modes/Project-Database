@@ -491,6 +491,7 @@ def admin():
     cursor.execute("SELECT count(ProductID) AS Total FROM Products")
     product_count = cursor.fetchone()
 
+
     # Top 3 best sellers
     cursor.execute("""
         SELECT P.Name, COALESCE(SUM(T.Quantity * T.PriceAtTimeOfSale), 0) AS TotalRevenue
@@ -557,6 +558,19 @@ def admin():
             LIMIT 5
         """)
     top_customers = cursor.fetchall()
+    # =====Report 5: Most Sold Products (by quantity) =====
+    cursor.execute("""
+        SELECT
+          P.ProductID,
+          P.Name,
+          COALESCE(SUM(TI.Quantity),0) AS UnitsSold
+        FROM TransactionItems TI
+        JOIN Products P ON P.ProductID = TI.ProductID
+        GROUP BY P.ProductID, P.Name
+        ORDER BY UnitsSold DESC
+        LIMIT 5
+    """)
+    most_sold_products = cursor.fetchall()
 
     cursor.close()
     conn.close()
@@ -566,6 +580,7 @@ def admin():
         total_revenue=total_revenue,
         customer_count=customer_count,
         product_count=product_count,
+        most_sold_products=most_sold_products,
         top_sellers=top_sellers,
         sales_last_7_days=sales_last_7_days,
         out_of_stock=out_of_stock,
