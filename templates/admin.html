@@ -11,10 +11,9 @@
 
 <div class="layout">
 
-    <!-- Sidebar -->
     <aside class="sidebar">
         <div class="sidebar-brand">
-            🛒 Al-Salam Supermarket
+            Al-Salam Supermarket
         </div>
 
         <nav class="sidebar-menu">
@@ -28,18 +27,15 @@
         </nav>
     </aside>
 
-    <!-- Main content -->
     <main class="main-content">
         <h1> Admin page</h1>
-        <!-- زر الرجوع للمحل -->
             <a href="{{ url_for('shop_page') }}">
                 <button class="back-btn" >← Back to shop</button>
             </a>
-            <!-- Stats -->
     <div class="grid">
         <div class="card">
             <p class="stat-title">Total Revenue</p>
-            <div class="stat-value money">${{ total_revenue.Total}}</div>
+            <div class="stat-value money">${{ total_revenue.Total or 0 }}</div>
         </div>
 
         <div class="card">
@@ -54,9 +50,8 @@
     </div>
 
 
-    <!-- Top Sellers -->
     <div class="section" id="top">
-        <h2>🏆 Top Sellers products<span class="pill">Top 3</span></h2>
+        <h2>Top Sellers products<span class="pill">Top 3</span></h2>
         <div class="card">
             {% if top_sellers %}
             <table>
@@ -81,9 +76,8 @@
         </div>
     </div>
 
-        <!-- Most Sold Products (By Quantity) -->
 <div class="section">
-    <h2>🧺 Most Sold Products <span class="pill">By Quantity</span></h2>
+    <h2>Most Sold Products <span class="pill">By Quantity</span></h2>
 
     <div class="card">
             {% if most_sold_products %}
@@ -113,7 +107,7 @@
 
 
     <div class="section">
-      <h2>⭐ Top Customers <span class="pill">Top 5</span></h2>
+      <h2>Top Customers <span class="pill">Top 5</span></h2>
       <div class="card">
         {% if top_customers %}
         <table>
@@ -139,11 +133,9 @@
         {% endif %}
       </div>
     </div>
-        <!-- محتوى الصفحة (Stats + Tables) -->
-        <!-- ضع هنا الإحصائيات و Top Sellers كما هي -->
 
         <div class="section">
-          <h2>📈 Sales Report <span class="pill">Last 7 Days</span></h2>
+          <h2>Sales Report <span class="pill">Last 7 Days</span></h2>
           <div class="card">
             {% if sales_last_7_days %}
             <table>
@@ -171,7 +163,7 @@
         </div>
 
         <div class="section">
-          <h2>📦 Stock Alerts <span class="pill">Out / Low</span></h2>
+          <h2>Stock Alerts <span class="pill">Out / Low</span></h2>
           <div class="grid">
             <div class="card">
               <p class="stat-title">Out of Stock</p>
@@ -188,7 +180,7 @@
                 </tbody>
               </table>
               {% else %}
-              <div class="empty">No out-of-stock products ✅</div>
+              <div class="empty">No out-of-stock products</div>
               {% endif %}
             </div>
 
@@ -207,19 +199,12 @@
                 </tbody>
               </table>
               {% else %}
-              <div class="empty">No low-stock products ✅</div>
+              <div class="empty">No low-stock products</div>
               {% endif %}
             </div>
           </div>
         </div>
-
-
-
-
     </main>
-
 </div>
-
-
 </body>
 </html>

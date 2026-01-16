@@ -11,6 +11,12 @@
     <h2>Transactions <span class="pill">View Only</span></h2>
     <hr>
 
+    {% if error %}
+    <div class="msg error" style="background: #fee2e2; color: #b91c1c; padding: 10px; border-radius: 5px; margin-bottom: 15px; border: 1px solid #f87171;">
+        {{ error }}
+    </div>
+    {% endif %}
+
     <div class="card">
         {% if transactions %}
         <table>
@@ -33,7 +39,7 @@
                     <td>
                         <a href="{{ url_for('admin_transaction_details', transaction_id=t.TransactionID) }}"
                            class="btn btn-small btn-update">
-                            👁 View
+                            View
                         </a>
                     </td>
                 </tr>

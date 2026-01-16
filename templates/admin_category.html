@@ -11,12 +11,18 @@
 
     <h2>Categories <span class="pill">Manage (Add / Edit / Delete)</span></h2>
     <hr>
-    <a class="btn btn-primary" href="{{ url_for('add_category') }}">➕ Add Category</a>
+    <a class="btn btn-primary" href="{{ url_for('add_category') }}">Add Category</a>
 
     {% if request.args.get('msg') %}
       <div class="msg {{ request.args.get('type', 'success') }}">
         {{ request.args.get('msg') }}
       </div>
+    {% endif %}
+
+    {% if error %}
+    <div class="msg error" style="background: #fee2e2; color: #b91c1c; padding: 10px; border-radius: 5px; margin-bottom: 15px; border: 1px solid #f87171;">
+        {{ error }}
+    </div>
     {% endif %}
 
 
@@ -38,13 +44,13 @@
                     <td>
                         <div class="actions">
                             <a href="{{ url_for('edit_category', cat_id=c.CategoryID) }}"
-                               class="btn btn-small btn-update">✏️ Edit</a>
+                               class="btn btn-small btn-update">Edit</a>
 
                             <form action="{{ url_for('delete_category', cat_id=c.CategoryID) }}"
                                   method="POST" style="margin:0;">
                                 <button class="btn btn-small btn-delete"
                                         onclick="return confirm('Delete this category?')">
-                                    🗑️ Delete
+                                    Delete
                                 </button>
                             </form>
                         </div>
@@ -60,9 +66,8 @@
 
 </div>
 
-<a href="{{ url_for('admin') }}" class="back-btn">← Back</a>
     <a href="{{ url_for('admin') }}">
-        <button class="back-btn" onclick="history.back()">← Back</button>
+        <button class="back-btn">← Back</button>
     </a>
 </body>
 </html>

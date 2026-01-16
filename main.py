@@ -5,7 +5,6 @@ from datetime import datetime
 app = Flask(__name__)
 app.secret_key = 'alsalam_supermarket_secret_key_2025'
 
-# Database Configuration
 db_config = {
     'host': 'localhost',
     'user': 'root',
@@ -20,34 +19,22 @@ def get_db_connection():
 @app.route('/')
 @app.route('/shop')
 def shop_page():
-    # Get filter parameters from the URL
     search_query = request.args.get('q', '')
     category_id = request.args.get('category', '')
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    # 1. Fetch all categories for the dropdown menu
     cursor.execute("SELECT * FROM Categories")
     categories = cursor.fetchall()
 
-    # 2. Build the Product Query with Filters
-    base_query = """
-                 SELECT P.*, \
-                        Cat.Name                                                                 AS CategoryName,
-                        (SELECT SUM(Quantity) FROM WarehouseStock WHERE ProductID = P.ProductID) AS TotalStock
-                 FROM Products P
-                          LEFT JOIN Categories Cat ON P.CategoryID = Cat.CategoryID
-                 WHERE 1 = 1 \
-                 """
+    base_query = "SELECT P.*, Cat.Name AS CategoryName, (SELECT SUM(Quantity) FROM WarehouseStock WHERE ProductID = P.ProductID) AS TotalStock FROM Products P LEFT JOIN Categories Cat ON P.CategoryID = Cat.CategoryID WHERE 1 = 1"
     params = []
 
-    # Filter by name if search query exists
     if search_query:
         base_query += " AND P.Name LIKE %s"
         params.append(f"%{search_query}%")
 
-    # Filter by category if one is selected
     if category_id:
         base_query += " AND P.CategoryID = %s"
         params.append(category_id)
@@ -58,7 +45,6 @@ def shop_page():
     cursor.close()
     conn.close()
 
-    # Pass filters back to template to keep the values in the inputs
     return render_template('shop.html',
                            products=products,
                            categories=categories,
@@ -68,6 +54,8 @@ def shop_page():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    error = None
+
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
@@ -75,7 +63,6 @@ def login():
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
 
-        # 1. Check if the user is a Customer
         cursor.execute("SELECT * FROM Customers WHERE Email = %s AND Password = %s", (email, password))
         user = cursor.fetchone()
 
@@ -85,10 +72,8 @@ def login():
             session['user_name'] = user['FirstName']
             cursor.close()
             conn.close()
-            # Redirect to shop, not a profile page
             return redirect(url_for('shop_page'))
 
-        # 2. Check if the user is an Employee (Admin/Staff)
         cursor.execute("SELECT * FROM Employees WHERE Email = %s AND Password = %s", (email, password))
         employee = cursor.fetchone()
 
@@ -97,15 +82,13 @@ def login():
 
         if employee:
             session['user_id'] = employee['EmployeeID']
-            # Store 'Admin' or 'Staff' role to control the settings icon later
             session['role'] = employee['Role']
             session['user_name'] = employee['FirstName']
-            # REDIRECT TO SHOP PAGE (Same as customer)
             return redirect(url_for('shop_page'))
 
-        return "Invalid credentials. <a href='/login'>Try again</a>"
+        error = "Invalid email or password. Please try again."
 
-    return render_template('login.html')
+    return render_template('login.html', error=error)
 
 @app.route('/logout')
 def logout():
@@ -114,34 +97,32 @@ def logout():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    error = None
     if request.method == 'POST':
-        # Capturing required attributes: FirstName, LastName, Email, Password
         first_name = request.form['first_name']
         last_name = request.form['last_name']
         email = request.form['email']
         password = request.form['password']
-        phone = request.form.get('phone', '') # Optional
-        address = request.form.get('address', '') # Optional
+        phone = request.form['phone']
+        address = request.form['address']
 
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
 
-        # Ensure account uniqueness by checking the email
         cursor.execute("SELECT * FROM Customers WHERE Email = %s", (email,))
         if cursor.fetchone():
             cursor.close()
             conn.close()
-            return "Error: This email is already registered. <a href='/register'>Try a different one.</a>"
+            error = "This email is already registered. Please use a different one."
+            return render_template('register.html', error=error)
 
-        # Insert the new customer into the database
         query = """
-            INSERT INTO Customers (FirstName, LastName, Email, Password, Phone, Address)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """
+                INSERT INTO Customers (FirstName, LastName, Email, Password, Phone, Address)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                """
         cursor.execute(query, (first_name, last_name, email, password, phone, address))
         conn.commit()
 
-        # Automatically log the user in after registration
         new_user_id = cursor.lastrowid
         session['user_id'] = new_user_id
         session['user_name'] = first_name
@@ -151,7 +132,7 @@ def register():
         conn.close()
         return redirect(url_for('shop_page'))
 
-    return render_template('register.html')
+    return render_template('register.html', error=error)
 
 
 @app.route('/customer_panel')
@@ -163,18 +144,15 @@ def customer_panel():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    # 1. Get Stats (Spent & Orders)
     cursor.execute("SELECT SUM(TotalAmount) as total, COUNT(*) as count FROM Transactions WHERE CustomerID = %s", (user_id,))
     stats = cursor.fetchone()
     total_spent = stats['total'] if stats['total'] else 0
     order_count = stats['count']
 
-    # 2. Get Cart Item Count
     cursor.execute("SELECT SUM(Quantity) as cart_total FROM Carts WHERE CustomerID = %s", (user_id,))
     cart_res = cursor.fetchone()
     cart_count = cart_res['cart_total'] if cart_res['cart_total'] else 0
 
-    # 3. Get Transaction History
     cursor.execute("SELECT * FROM Transactions WHERE CustomerID = %s ORDER BY TransactionTimestamp DESC LIMIT 5", (user_id,))
     transactions = cursor.fetchall()
 
@@ -196,7 +174,6 @@ def order_details(transaction_id):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    # 1. Fetch Order Metadata and verify ownership
     cursor.execute("""
         SELECT * FROM Transactions 
         WHERE TransactionID = %s AND CustomerID = %s
@@ -208,7 +185,6 @@ def order_details(transaction_id):
         conn.close()
         return "Order not found or access denied.", 403
 
-    # 2. Fetch all products in this specific transaction
     query = """
         SELECT P.Name, TI.Quantity, TI.PriceAtTimeOfSale, 
                (TI.Quantity * TI.PriceAtTimeOfSale) as Subtotal
@@ -234,7 +210,6 @@ def edit_profile():
     cursor = conn.cursor(dictionary=True)
 
     if request.method == 'POST':
-        # Update user information
         first_name = request.form.get('first_name')
         last_name = request.form.get('last_name')
         email = request.form.get('email')
@@ -254,7 +229,6 @@ def edit_profile():
         session['user_name'] = first_name
         return redirect(url_for('customer_panel'))
 
-    # Fetch current data to pre-fill the form
     cursor.execute("SELECT * FROM Customers WHERE CustomerID = %s", (user_id,))
     user_data = cursor.fetchone()
 
@@ -262,17 +236,14 @@ def edit_profile():
     conn.close()
     return render_template('edit_profile.html', user=user_data)
 
-# Update Add to Cart to use Session instead of form input
 @app.route('/add_to_cart', methods=['POST'])
 def add_to_cart():
     user_id = session.get('user_id')
     user_role = session.get('role')
 
-    # Redirect guests to login
     if not user_id:
         return redirect(url_for('login'))
 
-    # If an Admin/Staff somehow triggers this, just send them back to the shop
     if user_role in ['Admin', 'Staff']:
         return redirect(url_for('shop_page'))
 
@@ -280,7 +251,6 @@ def add_to_cart():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Proceed only for Customers
     query = """
             INSERT INTO Carts (CustomerID, ProductID, Quantity)
             VALUES (%s, %s, 1) ON DUPLICATE KEY
@@ -296,7 +266,6 @@ def add_to_cart():
 
 @app.route('/delete_from_cart/<int:product_id>', methods=['POST'])
 def delete_from_cart(product_id):
-    # Verify the user is logged in
     user_id = session.get('user_id')
     if not user_id:
         return redirect(url_for('login'))
@@ -304,7 +273,6 @@ def delete_from_cart(product_id):
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Delete the specific product for this specific customer
     cursor.execute("""
                    DELETE
                    FROM Carts
@@ -316,7 +284,6 @@ def delete_from_cart(product_id):
     cursor.close()
     conn.close()
 
-    # Redirect back to the cart page to show the updated list
     return redirect(url_for('view_cart', customer_id=user_id))
 
 
@@ -329,8 +296,6 @@ def update_cart():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Get all product IDs and quantities from the form
-    # The form will send data like {'qty_1': '5', 'qty_2': '3'}
     for key, value in request.form.items():
         if key.startswith('qty_'):
             product_id = key.split('_')[1]
@@ -342,7 +307,6 @@ def update_cart():
                         WHERE CustomerID = %s AND ProductID = %s
                     """, (quantity, user_id, product_id))
                 else:
-                    # If quantity is 0, remove it
                     cursor.execute("DELETE FROM Carts WHERE CustomerID = %s AND ProductID = %s", (user_id, product_id))
             except ValueError:
                 continue
@@ -354,7 +318,6 @@ def update_cart():
 
 @app.route('/cart/<int:customer_id>')
 def view_cart(customer_id):
-    # Verify the logged-in user is viewing their own cart
     if session.get('user_id') != customer_id:
         return redirect(url_for('login'))
 
@@ -388,24 +351,20 @@ def checkout(customer_id):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    # 1. Get current cart items
     cursor.execute("""
-                   SELECT C.*, P.UnitPrice, P.Discount
+                   SELECT C.*, P.UnitPrice, P.Discount, P.Name
                    FROM Carts C
                             JOIN Products P ON C.ProductID = P.ProductID
                    WHERE CustomerID = %s
                    """, (customer_id,))
     cart_items = cursor.fetchall()
 
-    if not cart_items:
-        cursor.close()
-        conn.close()
-        return redirect(url_for('shop_page'))
-
     total_amount = sum(((item['UnitPrice'] - item['Discount']) * item['Quantity']) for item in cart_items)
 
     try:
-        # 2. Check Total Global Stock for every item first
+        if not cart_items:
+            return redirect(url_for('shop_page'))
+
         for item in cart_items:
             cursor.execute("SELECT SUM(Quantity) as global_qty FROM WarehouseStock WHERE ProductID = %s",
                            (item['ProductID'],))
@@ -413,27 +372,25 @@ def checkout(customer_id):
             global_stock = row['global_qty'] if row['global_qty'] else 0
 
             if global_stock < item['Quantity']:
-                return f"Error: Not enough total stock for {item['ProductID']}. Available: {global_stock}", 400
+                error = f"Not enough stock for {item['Name']}. Available: {global_stock}"
+                return render_template('cart.html', items=cart_items, total=total_amount, customer_id=customer_id,
+                                       error=error)
 
-        # 3. Create Transaction
         cursor.execute("""
-                       INSERT INTO Transactions (TransactionTimestamp, TotalAmount, CustomerID, EmployeeID)
-                       VALUES (%s, %s, %s, %s)
-                       """, (datetime.now(), total_amount, customer_id, 1))
+                       INSERT INTO Transactions (TransactionTimestamp, TotalAmount, CustomerID)
+                       VALUES (%s, %s, %s)
+                       """, (datetime.now(), total_amount, customer_id))
         transaction_id = cursor.lastrowid
 
-        # 4. Deduct Stock and Record Items
         for item in cart_items:
             remaining_to_deduct = item['Quantity']
             price_paid = item['UnitPrice'] - item['Discount']
 
-            # Record historical sale
             cursor.execute("""
                            INSERT INTO TransactionItems (TransactionID, ProductID, Quantity, PriceAtTimeOfSale)
                            VALUES (%s, %s, %s, %s)
                            """, (transaction_id, item['ProductID'], item['Quantity'], price_paid))
 
-            # Deduct from warehouses sequentially
             cursor.execute(
                 "SELECT WarehouseID, Quantity FROM WarehouseStock WHERE ProductID = %s AND Quantity > 0 ORDER BY WarehouseID ASC",
                 (item['ProductID'],))
@@ -442,46 +399,40 @@ def checkout(customer_id):
             for stock in stocks:
                 if remaining_to_deduct <= 0:
                     break
-
                 if stock['Quantity'] >= remaining_to_deduct:
-                    # Current warehouse can cover the rest
                     cursor.execute(
                         "UPDATE WarehouseStock SET Quantity = Quantity - %s WHERE WarehouseID = %s AND ProductID = %s",
                         (remaining_to_deduct, stock['WarehouseID'], item['ProductID']))
                     remaining_to_deduct = 0
                 else:
-                    # Drain this warehouse and move to next
                     cursor.execute("UPDATE WarehouseStock SET Quantity = 0 WHERE WarehouseID = %s AND ProductID = %s",
                                    (stock['WarehouseID'], item['ProductID']))
                     remaining_to_deduct -= stock['Quantity']
 
-        # 5. Clear Cart
         cursor.execute("DELETE FROM Carts WHERE CustomerID = %s", (customer_id,))
         conn.commit()
 
+        return render_template('checkout_success.html', transaction_id=transaction_id)
+
     except Exception as e:
         conn.rollback()
-        return f"Database Error: {str(e)}", 500
+        return render_template('cart.html', items=cart_items, total=total_amount, customer_id=customer_id,
+                               error=f"Checkout Error: {str(e)}")
+
     finally:
         cursor.close()
         conn.close()
-
-    return render_template('checkout_success.html', transaction_id=transaction_id)
 @app.route('/admin')
 def admin():
-    # 1. Check if user is logged in
     user_id = session.get('user_id')
     user_role = session.get('role')
 
-    # 2. Verify they have the 'Admin' role
     if not user_id or user_role != 'Admin':
         return redirect(url_for('login'))
 
-    # 3. If they are an Admin, proceed to fetch data for the dashboard
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    # Total revenue
     cursor.execute("SELECT SUM(TotalAmount) AS Total FROM Transactions")
     total_revenue = cursor.fetchone()
 
@@ -491,8 +442,6 @@ def admin():
     cursor.execute("SELECT count(ProductID) AS Total FROM Products")
     product_count = cursor.fetchone()
 
-
-    # Top 3 best sellers
     cursor.execute("""
         SELECT P.Name, COALESCE(SUM(T.Quantity * T.PriceAtTimeOfSale), 0) AS TotalRevenue
         FROM TransactionItems T
@@ -503,7 +452,6 @@ def admin():
         """)
     top_sellers = cursor.fetchall()
 
-    # ===== Report 1: Sales Last 7 Days =====
     cursor.execute("""
             SELECT 
                 DATE(T.TransactionTimestamp) AS Day,
@@ -516,7 +464,6 @@ def admin():
         """)
     sales_last_7_days = cursor.fetchall()
 
-    # ===== Report 2: Stock Alerts (Out of Stock) =====
     cursor.execute("""
             SELECT 
                 P.ProductID, P.Name,
@@ -530,7 +477,6 @@ def admin():
         """)
     out_of_stock = cursor.fetchall()
 
-    # ===== Report 3: Stock Alerts (Low Stock < 5) =====
     cursor.execute("""
             SELECT 
                 P.ProductID, P.Name,
@@ -544,7 +490,6 @@ def admin():
         """)
     low_stock = cursor.fetchall()
 
-    # ===== Report 4: Top Customers =====
     cursor.execute("""
             SELECT
               C.CustomerID,
@@ -558,7 +503,8 @@ def admin():
             LIMIT 5
         """)
     top_customers = cursor.fetchall()
-    # =====Report 5: Most Sold Products (by quantity) =====
+
+
     cursor.execute("""
         SELECT
           P.ProductID,
@@ -588,9 +534,6 @@ def admin():
         top_customers=top_customers
     )
 
-########################################################################################################################
-########################################    Customer      ##############################################################
-########################################################################################################################
 @app.route('/admin_customer', methods=['GET', 'POST'])
 def admin_customer():
     conn = get_db_connection()
@@ -603,23 +546,34 @@ def admin_customer():
     return render_template('admin_customer.html', customer=customer)
 
 
-
 @app.route('/delete_customer/<int:customer_id>', methods=['POST'])
 def delete_customer(customer_id):
     conn = get_db_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(dictionary=True)
+    error = None
 
-    cursor.execute("DELETE FROM Customers WHERE CustomerID = %s", (customer_id,))
-    conn.commit()
+    try:
+        cursor.execute("DELETE FROM Customers WHERE CustomerID = %s", (customer_id,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return redirect(url_for('admin_customer'))
+
+    except mysql.connector.Error as err:
+        if err.errno == 1451:
+            error = "Cannot delete this customer because they have existing order history."
+        else:
+            error = f"Error deleting customer: {err}"
+
+    cursor.execute("SELECT CustomerID, FirstName, LastName, Phone, Address FROM Customers")
+    customers = cursor.fetchall()
 
     cursor.close()
     conn.close()
 
-    return redirect(url_for('admin_customer'))
+    return render_template('admin_customer.html', customer=customers, error=error)
 
-########################################################################################################################
-########################################    Employee      ###############################################################
-########################################################################################################################
+
 @app.route('/admin_employee', methods=['GET', 'POST'])
 def admin_employee():
     conn = get_db_connection()
@@ -668,13 +622,13 @@ def edit_employee(emp_id):
     cursor = conn.cursor(dictionary=True)
 
     if request.method == 'POST':
-        first_name = request.form['first_name']
-        last_name  = request.form['last_name']
-        email      = request.form['email']
-        password   = request.form['password']
-        phone      = request.form['phone']
-        address    = request.form['address']
-        role       = request.form['role']
+        first_name= request.form['first_name']
+        last_name = request.form['last_name']
+        email = request.form['email']
+        password = request.form['password']
+        phone = request.form['phone']
+        address = request.form['address']
+        role = request.form['role']
 
         cursor2 = conn.cursor()
         query = """
@@ -713,20 +667,11 @@ def delete_employee(emp_id):
 
     return redirect(url_for('admin_employee'))
 
-
-
-
-
-
-########################################################################################################################
-########################################    product      ###############################################################
-########################################################################################################################
 @app.route('/admin_product')
 def admin_product():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    # Note the use of "AS CategoryName" to match the template variable
     cursor.execute("""
         SELECT P.ProductID, P.Name, P.UnitPrice, P.Discount, P.ImageURL, 
                C.Name AS CategoryName, P.CategoryID
@@ -745,7 +690,6 @@ def admin_product():
     return render_template('admin_product.html', products=products, categories=categories)
 
 
-# Updated route to handle the separate fields page
 @app.route('/add_product', methods=['GET', 'POST'])
 def add_product():
     conn = get_db_connection()
@@ -764,10 +708,8 @@ def add_product():
         conn.commit()
         cursor.close()
         conn.close()
-        # Redirect back to the management list after saving
         return redirect(url_for('admin_product'))
 
-    # If GET, fetch categories to populate the dropdown on the fields page
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT CategoryID, Name FROM Categories ORDER BY Name")
     categories = cursor.fetchall()
@@ -775,7 +717,6 @@ def add_product():
     conn.close()
     return render_template('add_product.html', categories=categories)
 
-    # GET request: Load categories for the dropdown menu
     cursor.execute("SELECT CategoryID, Name FROM Categories ORDER BY Name")
     categories = cursor.fetchall()
     cursor.close()
@@ -794,7 +735,7 @@ def edit_product(product_id):
         unit_price = request.form['unit_price']
         discount = request.form.get('discount', 0)
         category_id = request.form.get('category_id')
-        image_url = request.form.get('image_url') # Capture the URL field
+        image_url = request.form.get('image_url')
 
         cursor2 = conn.cursor()
         cursor2.execute("""
@@ -823,16 +764,44 @@ def edit_product(product_id):
 @app.route('/delete_product/<int:product_id>', methods=['POST'])
 def delete_product(product_id):
     conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM Products WHERE ProductID=%s", (product_id,))
-    conn.commit()
+    cursor = conn.cursor(dictionary=True)
+    error = None
+
+    try:
+        cursor.execute("DELETE FROM Products WHERE ProductID=%s", (product_id,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return redirect(url_for('admin_product'))
+
+    except mysql.connector.Error as err:
+        if err.errno == 1451:
+            error = "Cannot delete this product because it has been sold in previous transactions."
+        else:
+            error = f"Error deleting product: {err}"
+
+    cursor.execute("""
+                   SELECT P.ProductID,
+                          P.Name,
+                          P.UnitPrice,
+                          P.Discount,
+                          P.ImageURL,
+                          C.Name AS CategoryName,
+                          P.CategoryID
+                   FROM Products P
+                            LEFT JOIN Categories C ON P.CategoryID = C.CategoryID
+                   ORDER BY P.ProductID
+                   """)
+    products = cursor.fetchall()
+
+    cursor.execute("SELECT CategoryID, Name FROM Categories ORDER BY Name")
+    categories = cursor.fetchall()
+
     cursor.close()
     conn.close()
-    return redirect(url_for('admin_product'))
 
-########################################################################################################################
-########################################    Warehouse      #############################################################
-########################################################################################################################
+    return render_template('admin_product.html', products=products, categories=categories, error=error)
+
 @app.route('/admin_warehouse')
 def admin_warehouse():
     conn = get_db_connection()
@@ -1006,9 +975,6 @@ def delete_warehouse(Ware_id):
     conn.close()
     return redirect(url_for('admin_warehouse'))
 
-########################################################################################################################
-########################################    Categories      #############################################################
-########################################################################################################################
 @app.route('/admin_category')
 def admin_category():
     conn = get_db_connection()
@@ -1065,30 +1031,34 @@ def edit_category(cat_id):
 
     return render_template('edit_category.html', category=category)
 
+
 @app.route('/delete_category/<int:cat_id>', methods=['POST'])
 def delete_category(cat_id):
     conn = get_db_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(dictionary=True)
+    error = None
 
     try:
         cursor.execute("DELETE FROM Categories WHERE CategoryID=%s", (cat_id,))
         conn.commit()
-        msg = "Category deleted successfully"
-        msg_type = "success"
-
-    except mysql.connector.Error as err:
-
-            msg = "Cannot delete this category because it has products. Move/delete products first."
-            msg_type = "error"
-
-    finally:
         cursor.close()
         conn.close()
+        return redirect(url_for('admin_category'))
 
-    return redirect(url_for('admin_category', msg=msg, type=msg_type))
-########################################################################################################################
-########################################  Transaction ###############################################################
-########################################################################################################################
+    except mysql.connector.Error as err:
+        if err.errno == 1451:
+            error = "Cannot delete this category because it contains products. Please delete or move the products first."
+        else:
+            error = f"Database Error: {err}"
+
+    cursor.execute("SELECT CategoryID, Name FROM Categories")
+    categories = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template('admin_category.html', categories=categories, error=error)
+
 @app.route('/admin_transaction')
 def admin_transaction():
     conn = get_db_connection()
@@ -1109,7 +1079,6 @@ def admin_transaction():
     conn.close()
 
     return render_template('admin_transaction.html', transactions=transactions)
-
 
 @app.route('/admin_transaction/<int:transaction_id>')
 def admin_transaction_details(transaction_id):
@@ -1144,7 +1113,6 @@ def admin_transaction_details(transaction_id):
     conn.close()
 
     return render_template('admin_transaction_details.html', detail=detail, items=items)
-
 
 if __name__ == '__main__':
     app.run(debug=True)

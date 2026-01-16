@@ -1,8 +1,7 @@
-/* --- Global Variables & Colors --- */
 :root {
-    --brand: #064e3b;      /* Dark Teal */
-    --brand-light: #059669; /* Success Green */
-    --bg: #f3f4f6;         /* Light Gray Background */
+    --brand: #064e3b;
+    --brand-light: #059669;
+    --bg: #f3f4f6;
     --card: #ffffff;
     --text: #1f2d3d;
     --muted: #6b7280;
@@ -26,7 +25,6 @@ body {
     padding: 0 20px 40px;
 }
 
-/* --- Topbar & Navigation --- */
 .topbar {
     background: var(--brand);
     color: #ffffff;
@@ -50,7 +48,6 @@ body {
 }
 .nav-icon-link:hover { transform: translateY(-2px); }
 
-/* --- Shop: Filter Bar --- */
 .filter-bar {
     background: white; padding: 20px; border-radius: 12px;
     margin-bottom: 30px; border: 1px solid var(--line);
@@ -76,7 +73,6 @@ body {
     padding: 10px; font-weight: 500;
 }
 
-/* --- Shop: Product Grid --- */
 .product-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: 20px;
@@ -96,7 +92,6 @@ body {
     padding: 10px;
 }
 
-/* Category name styling */
 .product-category {
     font-size: 0.8em; color: var(--muted);
     margin: 4px 0 10px 0; font-weight: 500;
@@ -105,7 +100,6 @@ body {
 .stock-info { font-size: 0.85em; margin: 5px 0; color: #059669; font-weight: 600; }
 .out-of-stock-text { color: var(--danger); }
 
-/* --- Pricing & Sales --- */
 .product-price-box { margin-bottom: 20px; display: flex; flex-direction: column; gap: 4px; }
 .price-final { font-size: 1.3em; font-weight: 800; color: var(--brand); }
 .price-original { color: var(--muted); text-decoration: line-through; font-size: 0.9em; }
@@ -115,7 +109,6 @@ body {
     display: inline-block; width: fit-content; margin: 0 auto;
 }
 
-/* --- Cart: Table & Summary --- */
 .cart-header {
     background: var(--brand); color: white; padding: 20px;
     border-radius: 12px 12px 0 0; display: flex; align-items: center;
@@ -142,7 +135,6 @@ body {
 .cart-summary { padding: 30px; background: #f9fafb; text-align: right; }
 .total-amount { color: var(--brand); font-weight: 800; font-size: 1.6em; }
 
-/* --- Buttons --- */
 .btn-shop-add, .cart-action-btn {
     background: var(--brand-light); color: white; border: none;
     padding: 12px 20px; border-radius: 8px; font-weight: 700;

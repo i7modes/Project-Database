@@ -41,7 +41,7 @@
                                 ${{ "%.2f"|format((item.UnitPrice - item.Discount) * item.Quantity) }}
                             </td>
                             <td style="text-align: right;">
-                                <button type="submit" form="delete-{{ item.ProductID }}" class="btn-delete">🗑️ Remove</button>
+                                <button type="submit" form="delete-{{ item.ProductID }}" class="btn-delete">Remove</button>
                             </td>
                         </tr>
                         {% endfor %}
@@ -55,8 +55,8 @@
                     </div>
                     <div style="display: flex; justify-content: flex-end; gap: 15px; align-items: center;">
                         <a href="{{ url_for('shop_page') }}" class="btn-clear" style="margin-right: auto;">← Continue Shopping</a>
-                        <button type="submit" class="cart-action-btn" style="width: auto; background: var(--muted);">🔄 Update Quantities</button>
-                        <button type="submit" form="checkout-form" class="cart-action-btn" style="width: auto; background: var(--brand);">✅ Confirm & Purchase</button>
+                        <button type="submit" class="cart-action-btn" style="width: auto; background: var(--muted);">Update Quantities</button>
+                        <button type="submit" form="checkout-form" class="cart-action-btn" style="width: auto; background: var(--brand);">Confirm & Purchase</button>
                     </div>
                 </div>
             </form>

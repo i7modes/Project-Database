@@ -8,6 +8,12 @@
 <body>
 <h2>Transaction Details</h2>
 
+{% if error %}
+<div class="msg error" style="background: #fee2e2; color: #b91c1c; padding: 10px; border-radius: 5px; margin-bottom: 15px; border: 1px solid #f87171;">
+    {{ error }}
+</div>
+{% endif %}
+
 <div class="card">
     <p><b>ID:</b> {{ detail.TransactionID }}</p>
     <p><b>Date:</b> {{ detail.TransactionTimestamp }}</p>

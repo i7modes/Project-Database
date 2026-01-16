@@ -3,8 +3,8 @@
     --card:#ffffff;
     --text:#1f2d3d;
     --muted:#6b7280;
-    --brand:#166534;   /* أخضر سوبرماركت */
-    --brand2:#0f766e;  /* أخضر مزرق */
+    --brand:#166534;
+    --brand2:#0f766e;
     --danger:#b91c1c;
     --line:#e5e7eb;
 }
@@ -23,7 +23,6 @@ body{
     padding: 0 16px 40px;
 }
 
-/* Top Bar */
 .topbar{
     background: #2e7d32;
     color:#ffffff;
@@ -93,7 +92,6 @@ body{
     border:1px solid rgba(255,255,255,0.25);
 }
 
-/* Stats */
 .grid{
     display:grid;
     grid-template-columns: 1.2fr 1fr 1fr;
@@ -126,7 +124,6 @@ body{
     font-size: 12px;
 }
 
-/* Sections */
 .section{
     margin-top: 18px;
 }
@@ -147,7 +144,6 @@ body{
     border-radius: 999px;
 }
 
-/* Tables */
 table{
     width:100%;
     border-collapse: collapse;
@@ -195,9 +191,7 @@ tr:hover td{ background:#fafafa; }
     background: var(--danger);
     color:#fff;
 }
-/* =========================
-   Back Button – Green
-========================= */
+
 .back-btn {
     position: fixed;
     top: 18px;
@@ -219,7 +213,6 @@ tr:hover td{ background:#fafafa; }
     transform: translateY(-1px);
 }
 
-/* Active */
 .back-btn:active{
   transform: translateY(0);
   box-shadow: 0 2px 6px rgba(46,125,50,0.45);
@@ -259,7 +252,7 @@ tr:hover td{ background:#fafafa; }
 .floating-btn:hover {
     background-color: #219150;
 }
-/* form */
+
 label {
     display: block;
     margin-top: 14px;
@@ -330,19 +323,13 @@ select option[value=""] {
 .top-actions .btn{
     white-space:nowrap;
 }
-/* =========================
-   Customers Page Tweaks
-   (paste at end of style.css)
-========================= */
 
-/* Make page content centered nicely */
 .section{
   max-width: 1000px;
   margin: 28px auto;
   padding: 0 16px;
 }
 
-/* Section title look */
 .section h2{
   margin: 0 0 10px;
   display:flex;
@@ -352,7 +339,6 @@ select option[value=""] {
   color:#2c3e50;
 }
 
-/* Small pill next to title */
 .pill{
   display:inline-block;
   font-size: 12px;
@@ -364,7 +350,6 @@ select option[value=""] {
   border: 1px solid #dde6f1;
 }
 
-/* Card polish (if you already have .card, this will enhance it) */
 .card{
   background: #fff;
   border-radius: 12px;
@@ -372,7 +357,6 @@ select option[value=""] {
   padding: 16px;
 }
 
-/* Table improvements */
 table{
   width: 100%;
   border-collapse: collapse;
@@ -403,13 +387,11 @@ tbody tr:hover{
   background: #f6f8fb;
 }
 
-/* Money style */
 .money{
   color: #2e7d32;
   font-weight: 700;
 }
 
-/* Actions column */
 .actions {
     margin-top: 22px;
     display: flex;
@@ -417,7 +399,6 @@ tbody tr:hover{
     justify-content: flex-end;
 }
 
-/* Buttons base */
 .btn{
   border: none;
   border-radius: 8px;
@@ -429,14 +410,12 @@ tbody tr:hover{
   gap: 6px;
 }
 
-/* Small buttons */
 .btn-small{
   padding: 8px 10px;
   font-size: 12px;
   border-radius: 8px;
 }
 
-/* Delete button */
 .btn-delete{
   background: #c0392b;
   color: #fff;
@@ -445,7 +424,6 @@ tbody tr:hover{
   background: #a93226;
 }
 
-/* Empty state */
 .empty{
   padding: 14px;
   border: 1px dashed #cbd5e1;
@@ -474,14 +452,12 @@ tbody tr:hover{
   border: 1px solid #ef9a9a;
 }
 
-/* ===== Layout ===== */
 .layout{
     display: flex;
     min-height: 100vh;
     background: #f6f8fb;
 }
 
-/* ===== Sidebar ===== */
 .sidebar{
     width: 230px;
     background: #2e7d32;
@@ -498,7 +474,6 @@ tbody tr:hover{
     text-align: center;
 }
 
-/* Menu */
 .sidebar-menu{
     display: flex;
     flex-direction: column;
@@ -518,12 +493,10 @@ tbody tr:hover{
     background: rgba(255,255,255,0.15);
 }
 
-/* Active page */
 .sidebar-menu a.active{
     background: rgba(255,255,255,0.25);
 }
 
-/* ===== Main Content ===== */
 .main-content{
     flex: 1;
     padding: 30px;
