@@ -212,19 +212,19 @@ def edit_profile():
     if request.method == 'POST':
         first_name = request.form.get('first_name')
         last_name = request.form.get('last_name')
-        email = request.form.get('email')
         phone = request.form.get('phone')
+        password = request.form.get('password')
         address = request.form.get('address')
 
         cursor.execute("""
                        UPDATE Customers
                        SET FirstName = %s,
-                           LastName  = %s,
-                           Email     = %s,
-                           Phone     = %s,
-                           Address   = %s
+                           LastName = %s,
+                           Phone  = %s,
+                           Address = %s,
+                           password = %s
                        WHERE CustomerID = %s
-                       """, (first_name, last_name, email, phone, address, user_id))
+                       """, (first_name, last_name, phone, address, password,user_id))
         conn.commit()
         session['user_name'] = first_name
         return redirect(url_for('customer_panel'))
