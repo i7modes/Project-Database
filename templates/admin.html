@@ -134,6 +134,36 @@
       </div>
     </div>
 
+                <div class="section">
+          <h2>Sales Report <span class="pill">Today</span></h2>
+          <div class="card">
+            {% if sales_today %}
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Transactions</th>
+                  <th>Revenue</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in sales_today %}
+                <tr>
+                  <td>{{ r.Day }}</td>
+                  <td>{{ r.TransactionsCount }}</td>
+                  <td class="money">${{ r.Revenue }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% else %}
+              <div class="empty">No sales today.</div>
+            {% endif %}
+          </div>
+        </div>
+
+
+
         <div class="section">
           <h2>Sales Report <span class="pill">Last 7 Days</span></h2>
           <div class="card">

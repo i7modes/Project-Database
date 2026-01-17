@@ -422,6 +422,7 @@ def checkout(customer_id):
     finally:
         cursor.close()
         conn.close()
+
 @app.route('/admin')
 def admin():
     user_id = session.get('user_id')
@@ -443,34 +444,37 @@ def admin():
     product_count = cursor.fetchone()
 
     cursor.execute("""
-        SELECT P.Name, COALESCE(SUM(T.Quantity * T.PriceAtTimeOfSale), 0) AS TotalRevenue
+        SELECT P.Name, SUM(T.Quantity * T.PriceAtTimeOfSale) AS TotalRevenue
         FROM TransactionItems T
-        JOIN Products P ON T.ProductID = P.ProductID
-        GROUP BY P.ProductID, P.Name
+        join Products P ON T.ProductID = P.ProductID
+        Group By P.ProductID, P.Name
         ORDER BY TotalRevenue DESC
-        LIMIT 3
+        limit 3
         """)
     top_sellers = cursor.fetchall()
 
     cursor.execute("""
-            SELECT 
-                DATE(T.TransactionTimestamp) AS Day,
-                COALESCE(SUM(T.TotalAmount),0) AS Revenue,
-                COUNT(*) AS TransactionsCount
+            SELECT DATE(T.TransactionTimestamp) AS Day,SUM(T.TotalAmount) AS Revenue, COUNT(*) AS TransactionsCount
+            FROM Transactions T
+            WHERE T.TransactionTimestamp >= (NOW() - INTERVAL 1 DAY)
+            Group by DATE(T.TransactionTimestamp)
+            ORDER BY Day DESC
+        """)
+    sales_today = cursor.fetchall()
+
+    cursor.execute("""
+            SELECT DATE(T.TransactionTimestamp) AS Day,SUM(T.TotalAmount) AS Revenue, COUNT(*) AS TransactionsCount
             FROM Transactions T
             WHERE T.TransactionTimestamp >= (NOW() - INTERVAL 7 DAY)
-            GROUP BY DATE(T.TransactionTimestamp)
+            Group by DATE(T.TransactionTimestamp)
             ORDER BY Day DESC
         """)
     sales_last_7_days = cursor.fetchall()
 
     cursor.execute("""
-            SELECT 
-                P.ProductID, P.Name,
-                COALESCE(SUM(WS.Quantity),0) AS TotalQty
-            FROM Products P
-            LEFT JOIN WarehouseStock WS ON WS.ProductID = P.ProductID
-            GROUP BY P.ProductID, P.Name
+            SELECT P.ProductID, P.Name,SUM(WS.Quantity) AS TotalQty
+            FROM Products P left join WarehouseStock WS ON WS.ProductID = P.ProductID
+            Group By P.ProductID, P.Name
             HAVING TotalQty = 0
             ORDER BY P.Name
             LIMIT 10
@@ -478,11 +482,8 @@ def admin():
     out_of_stock = cursor.fetchall()
 
     cursor.execute("""
-            SELECT 
-                P.ProductID, P.Name,
-                COALESCE(SUM(WS.Quantity),0) AS TotalQty
-            FROM Products P
-            LEFT JOIN WarehouseStock WS ON WS.ProductID = P.ProductID
+            SELECT P.ProductID, P.Name,SUM(WS.Quantity) AS TotalQty
+            FROM Products P left join WarehouseStock WS ON WS.ProductID = P.ProductID
             GROUP BY P.ProductID, P.Name
             HAVING TotalQty > 0 AND TotalQty < 5
             ORDER BY TotalQty ASC
@@ -491,14 +492,9 @@ def admin():
     low_stock = cursor.fetchall()
 
     cursor.execute("""
-            SELECT
-              C.CustomerID,
-              CONCAT(C.FirstName,' ',C.LastName) AS CustomerName,
-              COUNT(T.TransactionID) AS OrdersCount,
-              COALESCE(SUM(T.TotalAmount),0) AS TotalSpent
-            FROM Transactions T
-            JOIN Customers C ON C.CustomerID = T.CustomerID
-            GROUP BY C.CustomerID, CustomerName
+            SELECT C.CustomerID,CONCAT(C.FirstName,' ',C.LastName) AS CustomerName,COUNT(T.TransactionID) AS OrdersCount,SUM(T.TotalAmount) AS TotalSpent
+            FROM Transactions T JOIN Customers C ON C.CustomerID = T.CustomerID
+            Group By C.CustomerID, CustomerName
             ORDER BY TotalSpent DESC
             LIMIT 5
         """)
@@ -506,12 +502,8 @@ def admin():
 
 
     cursor.execute("""
-        SELECT
-          P.ProductID,
-          P.Name,
-          COALESCE(SUM(TI.Quantity),0) AS UnitsSold
-        FROM TransactionItems TI
-        JOIN Products P ON P.ProductID = TI.ProductID
+        SELECT P.ProductID,P.Name,SUM(T.Quantity) AS UnitsSold
+        FROM TransactionItems T JOIN Products P ON P.ProductID = T.ProductID
         GROUP BY P.ProductID, P.Name
         ORDER BY UnitsSold DESC
         LIMIT 5
@@ -528,6 +520,7 @@ def admin():
         product_count=product_count,
         most_sold_products=most_sold_products,
         top_sellers=top_sellers,
+        sales_today=sales_today,
         sales_last_7_days=sales_last_7_days,
         out_of_stock=out_of_stock,
         low_stock=low_stock,
@@ -560,10 +553,8 @@ def delete_customer(customer_id):
         return redirect(url_for('admin_customer'))
 
     except mysql.connector.Error as err:
-        if err.errno == 1451:
             error = "Cannot delete this customer because they have existing order history."
-        else:
-            error = f"Error deleting customer: {err}"
+
 
     cursor.execute("SELECT CustomerID, FirstName, LastName, Phone, Address FROM Customers")
     customers = cursor.fetchall()
@@ -717,13 +708,6 @@ def add_product():
     conn.close()
     return render_template('add_product.html', categories=categories)
 
-    cursor.execute("SELECT CategoryID, Name FROM Categories ORDER BY Name")
-    categories = cursor.fetchall()
-    cursor.close()
-    conn.close()
-
-    return render_template('add_product.html', categories=categories)
-
 
 @app.route('/edit_product/<int:product_id>', methods=['GET', 'POST'])
 def edit_product(product_id):
@@ -775,21 +759,12 @@ def delete_product(product_id):
         return redirect(url_for('admin_product'))
 
     except mysql.connector.Error as err:
-        if err.errno == 1451:
             error = "Cannot delete this product because it has been sold in previous transactions."
-        else:
-            error = f"Error deleting product: {err}"
+
 
     cursor.execute("""
-                   SELECT P.ProductID,
-                          P.Name,
-                          P.UnitPrice,
-                          P.Discount,
-                          P.ImageURL,
-                          C.Name AS CategoryName,
-                          P.CategoryID
-                   FROM Products P
-                            LEFT JOIN Categories C ON P.CategoryID = C.CategoryID
+                   SELECT P.ProductID,P.Name,P.UnitPrice,P.Discount,P.ImageURL,C.Name AS CategoryName,P.CategoryID
+                   FROM Products P LEFT JOIN Categories C ON P.CategoryID = C.CategoryID
                    ORDER BY P.ProductID
                    """)
     products = cursor.fetchall()
@@ -1046,10 +1021,8 @@ def delete_category(cat_id):
         return redirect(url_for('admin_category'))
 
     except mysql.connector.Error as err:
-        if err.errno == 1451:
             error = "Cannot delete this category because it contains products. Please delete or move the products first."
-        else:
-            error = f"Database Error: {err}"
+
 
     cursor.execute("SELECT CategoryID, Name FROM Categories")
     categories = cursor.fetchall()
@@ -1065,11 +1038,7 @@ def admin_transaction():
     cursor = conn.cursor(dictionary=True)
 
     cursor.execute("""
-        SELECT
-            T.TransactionID,
-            T.TransactionTimestamp,
-            T.TotalAmount,
-            CONCAT(C.FirstName, ' ', C.LastName) AS CustomerName
+        SELECT T.TransactionID,T.TransactionTimestamp,T.TotalAmount,CONCAT(C.FirstName, ' ', C.LastName) AS CustomerName
         FROM Transactions T LEFT JOIN Customers C ON T.CustomerID = C.CustomerID
         ORDER BY T.TransactionID
     """)
@@ -1086,23 +1055,15 @@ def admin_transaction_details(transaction_id):
     cursor = conn.cursor(dictionary=True)
 
     cursor.execute("""
-        SELECT
-            T.TransactionID,
-            T.TransactionTimestamp,
-            T.TotalAmount,
-            CONCAT(C.FirstName, ' ', C.LastName) AS CustomerName
+        SELECT T.TransactionID,T.TransactionTimestamp,T.TotalAmount,CONCAT(C.FirstName, ' ', C.LastName) AS CustomerName
         FROM Transactions T
-        LEFT JOIN Customers C ON T.CustomerID = C.CustomerID
+        left join Customers C ON T.CustomerID = C.CustomerID
         WHERE T.TransactionID = %s
     """, (transaction_id,))
     detail = cursor.fetchone()
 
     cursor.execute("""
-        SELECT
-            P.Name,
-            T.Quantity,
-            T.PriceAtTimeOfSale,
-            (T.Quantity * T.PriceAtTimeOfSale) AS LineTotal
+        SELECT P.Name,T.Quantity,T.PriceAtTimeOfSale,(T.Quantity * T.PriceAtTimeOfSale) AS LineTotal
         FROM TransactionItems T
         JOIN Products P ON T.ProductID = P.ProductID
         WHERE T.TransactionID = %s
