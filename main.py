@@ -443,7 +443,7 @@ def admin():
     cursor.execute("SELECT count(ProductID) AS Total FROM Products")
     product_count = cursor.fetchone()
 
-    cursor.execute("SELECT COALESCE(SUM(Quantity), 0) AS TotalCartItems FROM Carts")
+    cursor.execute("SELECT SUM(Quantity) AS TotalCartItems FROM Carts")
     total_cart_items = cursor.fetchone()
 
     cursor.execute("""
@@ -514,7 +514,7 @@ def admin():
     most_sold_products = cursor.fetchall()
 
     cursor.execute("""
-        SELECT COALESCE(SUM((P.UnitPrice - P.Discount) * C.Quantity), 0) AS CartValue
+        SELECT SUM((P.UnitPrice - P.Discount) * C.Quantity)AS CartValue
         FROM Carts C
         JOIN Products P ON P.ProductID = C.ProductID
     """)
