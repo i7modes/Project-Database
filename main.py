@@ -443,6 +443,9 @@ def admin():
     cursor.execute("SELECT count(ProductID) AS Total FROM Products")
     product_count = cursor.fetchone()
 
+    cursor.execute("SELECT COALESCE(SUM(Quantity), 0) AS TotalCartItems FROM Carts")
+    total_cart_items = cursor.fetchone()
+
     cursor.execute("""
         SELECT P.Name, SUM(T.Quantity * T.PriceAtTimeOfSale) AS TotalRevenue
         FROM TransactionItems T
@@ -494,7 +497,7 @@ def admin():
     cursor.execute("""
             SELECT C.CustomerID,CONCAT(C.FirstName,' ',C.LastName) AS CustomerName,COUNT(T.TransactionID) AS OrdersCount,SUM(T.TotalAmount) AS TotalSpent
             FROM Transactions T JOIN Customers C ON C.CustomerID = T.CustomerID
-            Group By C.CustomerID, CustomerName
+            Group By C.CustomerID
             ORDER BY TotalSpent DESC
             LIMIT 5
         """)
@@ -504,11 +507,56 @@ def admin():
     cursor.execute("""
         SELECT P.ProductID,P.Name,SUM(T.Quantity) AS UnitsSold
         FROM TransactionItems T JOIN Products P ON P.ProductID = T.ProductID
-        GROUP BY P.ProductID, P.Name
+        GROUP BY P.ProductID
         ORDER BY UnitsSold DESC
         LIMIT 5
     """)
     most_sold_products = cursor.fetchall()
+
+    cursor.execute("""
+        SELECT COALESCE(SUM((P.UnitPrice - P.Discount) * C.Quantity), 0) AS CartValue
+        FROM Carts C
+        JOIN Products P ON P.ProductID = C.ProductID
+    """)
+    cart_value = cursor.fetchone()
+
+    cursor.execute("""
+        SELECT COUNT(*) AS InactiveCustomers
+        FROM Customers C
+        LEFT JOIN Transactions T ON T.CustomerID = C.CustomerID
+        WHERE T.TransactionID IS NULL
+    """)
+    inactive_customers = cursor.fetchone()
+
+
+    #cusotmer with purches over 200
+    cursor.execute("""
+            SELECT T.TransactionID,CONCAT(C.FirstName,' ' ,C.LastName) As CName,T.TransactionTimestamp, T.TotalAmount
+            FROM Transactions T JOIN customers C ON T.CustomerID = C.CustomerID
+            WHERE TotalAmount > 200
+            ORDER BY TransactionTimestamp DESC
+            LIMIT 5;
+    """)
+    transactions_over_200 = cursor.fetchall()
+
+    cursor.execute("""
+        SELECT P.ProductID, P.Name
+        FROM Products P
+        LEFT JOIN TransactionItems TI ON TI.ProductID = P.ProductID
+        WHERE TI.ProductID IS NULL
+        ORDER BY P.ProductID DESC
+        LIMIT 10
+    """)
+    products_never_sold = cursor.fetchall()
+
+    cursor.execute("""
+        SELECT W.WarehouseID,W.Name AS WarehouseName,COUNT(DISTINCT WS.ProductID) AS ProductsCount,SUM(WS.Quantity) AS TotalQty
+        FROM Warehouses W
+        LEFT JOIN WarehouseStock WS ON WS.WarehouseID = W.WarehouseID
+        GROUP BY W.WarehouseID
+        ORDER BY TotalQty DESC
+    """)
+    warehouse_utilization = cursor.fetchall()
 
     cursor.close()
     conn.close()
@@ -518,13 +566,19 @@ def admin():
         total_revenue=total_revenue,
         customer_count=customer_count,
         product_count=product_count,
+        total_cart_items=total_cart_items,
+        cart_value=cart_value,
         most_sold_products=most_sold_products,
+        products_never_sold=products_never_sold,
         top_sellers=top_sellers,
         sales_today=sales_today,
         sales_last_7_days=sales_last_7_days,
         out_of_stock=out_of_stock,
         low_stock=low_stock,
-        top_customers=top_customers
+        top_customers=top_customers,
+        transactions_over_200=transactions_over_200,
+        warehouse_utilization=warehouse_utilization,
+        inactive_customers=inactive_customers
     )
 
 @app.route('/admin_customer', methods=['GET', 'POST'])

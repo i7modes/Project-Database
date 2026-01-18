@@ -47,7 +47,25 @@
             <p class="stat-title">Total Products</p>
             <div class="stat-value">{{ product_count.Total }}</div>
         </div>
+
+        <div class="card">
+          <p class="stat-title">Total Cart Value</p>
+          <div class="stat-value money">${{ "%.2f"|format(cart_value.CartValue) }}</div>
+        </div>
+
+        <div class="card">
+          <p class="stat-title">Inactive Customers</p>
+          <div class="stat-value">{{ inactive_customers.InactiveCustomers }}</div>
+        </div>
+
+        <div class="card">
+          <p class="stat-title">Total Cart Items</p>
+          <div class="stat-value">{{ total_cart_items.TotalCartItems }}</div>
+        </div>
+
+
     </div>
+
 
 
     <div class="section" id="top">
@@ -105,6 +123,33 @@
         </div>
     </div>
 
+        <div class="section">
+          <h2>Products Never Sold <span class="pill">Dead Stock</span></h2>
+
+          <div class="card">
+            {% if products_never_sold %}
+            <table>
+              <thead>
+                <tr>
+                  <th>ProductID</th>
+                  <th>Product Name</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in products_never_sold %}
+                <tr>
+                  <td class="money">{{ p.ProductID }}</td>
+                  <td>{{ p.Name }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% else %}
+              <div class="empty">All products have sales</div>
+            {% endif %}
+          </div>
+        </div>
+
 
     <div class="section">
       <h2>Top Customers <span class="pill">Top 5</span></h2>
@@ -134,33 +179,33 @@
       </div>
     </div>
 
-                <div class="section">
-          <h2>Sales Report <span class="pill">Today</span></h2>
-          <div class="card">
-            {% if sales_today %}
-            <table>
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Transactions</th>
-                  <th>Revenue</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for r in sales_today %}
-                <tr>
-                  <td>{{ r.Day }}</td>
-                  <td>{{ r.TransactionsCount }}</td>
-                  <td class="money">${{ r.Revenue }}</td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-            {% else %}
-              <div class="empty">No sales today.</div>
-            {% endif %}
-          </div>
-        </div>
+    <div class="section">
+      <h2>Sales Report <span class="pill">Today</span></h2>
+      <div class="card">
+        {% if sales_today %}
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Transactions</th>
+              <th>Revenue</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in sales_today %}
+            <tr>
+              <td>{{ r.Day }}</td>
+              <td>{{ r.TransactionsCount }}</td>
+              <td class="money">${{ r.Revenue }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+          <div class="empty">No sales today.</div>
+        {% endif %}
+      </div>
+    </div>
 
 
 
@@ -191,6 +236,66 @@
             {% endif %}
           </div>
         </div>
+
+        <div class="section">
+  <h2>High-Value Transactions <span class="pill">Over $200</span></h2>
+
+      <div class="card">
+        {% if transactions_over_200 %}
+        <table>
+          <thead>
+            <tr>
+              <th>TransactionID</th>
+              <th>Customer name</th>
+              <th>Date</th>
+              <th>Total Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in transactions_over_200 %}
+            <tr>
+              <td class="money">{{ t.TransactionID }}</td>
+              <td>{{ t.CName }}</td>
+              <td>{{ t.TransactionTimestamp }}</td>
+              <td class="money">${{ t.TotalAmount }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+          <div class="empty">No transactions above $200 found.</div>
+        {% endif %}
+      </div>
+    </div>
+
+        <div class="section">
+      <h2>Warehouse Utilization <span class="pill">Stock Summary</span></h2>
+
+      <div class="card">
+        {% if warehouse_utilization%}
+        <table>
+          <thead>
+            <tr>
+              <th>Warehouse</th>
+              <th>Products Count</th>
+              <th>Total Quantity</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for w in warehouse_utilization %}
+            <tr>
+              <td>{{ w.WarehouseName }}</td>
+              <td>{{ w.ProductsCount }}</td>
+              <td class="money">{{ w.TotalQty }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+          <div class="empty">No warehouse data found.</div>
+        {% endif %}
+      </div>
+    </div>
 
         <div class="section">
           <h2>Stock Alerts <span class="pill">Out / Low</span></h2>
@@ -234,6 +339,7 @@
             </div>
           </div>
         </div>
+
     </main>
 </div>
 </body>
