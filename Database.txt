@@ -1,0 +1,151 @@
+CREATE DATABASE IF NOT EXISTS Supermarket;
+USE Supermarket;
+
+
+CREATE TABLE Categories (
+CategoryID INT AUTO_INCREMENT PRIMARY KEY,
+Name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Warehouses (
+WarehouseID INT AUTO_INCREMENT PRIMARY KEY,
+Name VARCHAR(100) NOT NULL,
+Address VARCHAR(255)
+);
+
+CREATE TABLE Customers (
+CustomerID INT AUTO_INCREMENT PRIMARY KEY,
+FirstName VARCHAR(50) NOT NULL,
+LastName VARCHAR(50) NOT NULL,
+Email VARCHAR(100) UNIQUE NOT NULL,
+Password VARCHAR(255) NOT NULL,
+Phone VARCHAR(20),
+Address TEXT
+);
+
+CREATE TABLE Employees (
+EmployeeID INT AUTO_INCREMENT PRIMARY KEY,
+FirstName VARCHAR(50) NOT NULL,
+LastName VARCHAR(50) NOT NULL,
+Email VARCHAR(100) UNIQUE NOT NULL,
+Password VARCHAR(255) NOT NULL,
+Phone VARCHAR(20),
+Address TEXT,
+Role VARCHAR(50) -- e.g., 'Admin', 'Staff'
+);
+
+CREATE TABLE Products (
+ProductID INT AUTO_INCREMENT PRIMARY KEY,
+Name VARCHAR(100) NOT NULL,
+UnitPrice DECIMAL(10, 2) NOT NULL,
+Discount DECIMAL(5, 2) DEFAULT 0.00,
+CategoryID INT,
+FOREIGN KEY (CategoryID) REFERENCES Categories(CategoryID) ON UPDATE CASCADE
+);
+
+CREATE TABLE Transactions (
+TransactionID INT AUTO_INCREMENT PRIMARY KEY,
+TransactionTimestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+TotalAmount DECIMAL(10, 2),
+CustomerID INT,
+FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID) ON DELETE CASCADE ON UPDATE CASCADE,
+);
+
+CREATE TABLE WarehouseStock (
+WarehouseID INT,
+ProductID INT,
+Quantity INT DEFAULT 0,
+PRIMARY KEY (WarehouseID, ProductID),
+FOREIGN KEY (WarehouseID) REFERENCES Warehouses(WarehouseID) ON DELETE CASCADE ON UPDATE CASCADE,
+FOREIGN KEY (ProductID) REFERENCES Products(ProductID) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Carts (
+CustomerID INT,
+ProductID INT,
+Quantity INT DEFAULT 1,
+PRIMARY KEY (CustomerID, ProductID),
+FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID) ON DELETE CASCADE ON UPDATE CASCADE,
+FOREIGN KEY (ProductID) REFERENCES Products(ProductID) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE TransactionItems (
+TransactionID INT,
+ProductID INT,
+Quantity INT NOT NULL,
+PriceAtTimeOfSale DECIMAL(10, 2) NOT NULL,
+PRIMARY KEY (TransactionID, ProductID),
+FOREIGN KEY (TransactionID) REFERENCES Transactions(TransactionID) ON DELETE CASCADE ON UPDATE CASCADE,
+FOREIGN KEY (ProductID) REFERENCES Products(ProductID) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+USE Supermarket;
+
+
+INSERT INTO Categories (Name) VALUES
+('Dairy Products'),
+('Fruits & Vegetables'),
+('Meat & Poultry'),
+('Canned Foods'),
+('Bakery'),
+('Cleaning Supplies');
+
+
+
+INSERT INTO Warehouses (Name, Address) VALUES
+('Central Supermarket Warehouse', 'Ramallah - Industrial Zone'),
+('North Supermarket Warehouse', 'Nablus - Commercial Area');
+
+
+INSERT INTO Customers (FirstName, LastName, Email, Password, Phone, Address) VALUES
+('Ahmad', 'Saleh', 'ahmad.saleh@gmail.com', '1111', '0598123456', 'Ramallah'),
+('Lina', 'Hassan', 'lina.hassan@gmail.com', '1234', '0598765432', 'Birzeit'),
+('Omar', 'Yousef', 'omar.yousef@gmail.com', '124356', '0569123456', 'Nablus');
+
+
+INSERT INTO Employees (FirstName, LastName, Email, Password, Phone, Address, Role) VALUES
+('Admin', 'User', 'admin@alsalam.com', 'admin_pass', '0599000000', 'Jerusalem', 'Admin'),
+('Sami', 'Worker', 'sami@alsalam.com', 'staff_pass', '0599000001', 'Jenin', 'Staff');
+
+
+INSERT INTO Products (Name, UnitPrice, Discount, CategoryID) VALUES
+('Fresh Milk 1L', 6, 0.00, 1),
+('Apples 1kg', 5.00, 0.00, 2),
+('Chicken 1kg', 20.00, 2.00, 3),
+('Tuna', 5.00, 0.00, 4),
+('Bread', 2.50, 0.00, 5),
+('Dettol 750mL', 20.00, 3.00, 6);
+
+
+INSERT INTO WarehouseStock (WarehouseID, ProductID, Quantity) VALUES
+(1, 1, 200), -- Milk
+(1, 2, 300), -- Apples
+(1, 3, 80),  -- Chicken
+(1, 4, 80),  -- Tuna
+(1, 5, 0),   -- Bread (Out of stock)
+(2, 1, 120),
+(2, 6, 180),
+(2, 3, 400);
+
+INSERT INTO Carts (CustomerID, ProductID, Quantity) VALUES
+(1, 3, 2), -- Ahmad buys apples
+(1, 4, 1),
+(2, 5, 1); -- chicken
+
+
+INSERT INTO Transactions (TransactionTimestamp, TotalAmount, CustomerID, EmployeeID) VALUES
+('2025-11-20 11:30:00', 45.00, 1, 2),
+('2025-11-21 16:10:00', 18.00, 2, 2),
+('2025-11-22 09:45:00', 62.00, 1, 1);
+
+
+INSERT INTO TransactionItems (TransactionID, ProductID, Quantity, PriceAtTimeOfSale) VALUES
+(1, 2, 2, 5.00),  -- Apples
+(1, 1, 1, 6.00),  -- MILK
+(1, 3, 1, 20.00), -- Chicken
+(2, 5, 2, 2.50);  -- Bread
+
+    
+CREATE USER 'supermarket_admin'@'localhost' IDENTIFIED BY 'admin123';
+GRANT ALL PRIVILEGES ON Supermarket.* TO 'supermarket_admin'@'localhost';
+FLUSH PRIVILEGES;
